@@ -1,3 +1,4 @@
+import 'package:boilerplate_flutter/features/home/controller/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme.dart';
@@ -17,6 +18,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => HomeController()..loadUsers()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
