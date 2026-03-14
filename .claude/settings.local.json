@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter test:*)",
+      "Bash(cp -r /Users/rasdannatiq/Documents/workSpace/flutter/boilerplate_flutter /Users/rasdannatiq/Documents/workSpace/flutter/hp_appen_app && echo \"Copy done\")",
+      "Bash(find /Users/rasdannatiq/Documents/workSpace/flutter/hp_appen_app/lib /Users/rasdannatiq/Documents/workSpace/flutter/hp_appen_app/test -name \"*.dart\" -exec sed -i '' 's/package:boilerplate_flutter/package:hp_appen_app/g' {} + && echo \"done\")"
+    ]
+  }
+}
