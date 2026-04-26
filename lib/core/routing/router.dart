@@ -4,6 +4,7 @@ import '../../features/auth/controller/auth_controller.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/home/view/home_screen.dart';
 import '../../features/settings/view/setting_screen.dart';
+import '../../features/splash/view/splash_screen.dart';
 import '../../core/di/service_locator.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -15,17 +16,25 @@ GoRouter buildRouter() {
 
   return GoRouter(
     navigatorKey: navigatorKey,
-    initialLocation: '/',
+    initialLocation: '/splash',
     refreshListenable: authController,
     redirect: (context, state) {
       final loggedIn = authController.isLoggedIn;
+      final isSplash = state.matchedLocation == '/splash';
       final isLoginRoute = state.matchedLocation == '/login';
+
+      // Always let splash through — it handles its own navigation
+      if (isSplash) return null;
 
       if (!loggedIn && !isLoginRoute) return '/login';
       if (loggedIn && isLoginRoute) return '/';
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
