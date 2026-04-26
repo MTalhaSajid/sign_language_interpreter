@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/controller/auth_controller.dart';
 import '../../features/auth/view/login_screen.dart';
+import '../../features/auth/view/register_screen.dart';
 import '../../features/home/view/home_screen.dart';
 import '../../features/settings/view/setting_screen.dart';
 import '../../features/splash/view/splash_screen.dart';
@@ -22,12 +23,16 @@ GoRouter buildRouter() {
       final loggedIn = authController.isLoggedIn;
       final isSplash = state.matchedLocation == '/splash';
       final isLoginRoute = state.matchedLocation == '/login';
+      final isRegisterRoute = state.matchedLocation == '/register';
 
       // Always let splash through — it handles its own navigation
       if (isSplash) return null;
 
-      if (!loggedIn && !isLoginRoute) return '/login';
-      if (loggedIn && isLoginRoute) return '/';
+      // Allow unauthenticated users to access login and register
+      if (!loggedIn && (isLoginRoute || isRegisterRoute)) return null;
+
+      if (!loggedIn) return '/login';
+      if (loggedIn && (isLoginRoute || isRegisterRoute)) return '/';
       return null;
     },
     routes: [
@@ -38,6 +43,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/',

@@ -33,6 +33,27 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<bool> register(String name, String email, String password) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final result = await _authService.register(
+      RegisterRequest(name: name, email: email, password: password),
+    );
+
+    isLoading = false;
+
+    if (result.isSuccess) {
+      notifyListeners();
+      return true;
+    } else {
+      errorMessage = result.error!.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     notifyListeners();

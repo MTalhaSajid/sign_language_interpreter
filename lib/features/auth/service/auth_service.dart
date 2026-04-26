@@ -7,8 +7,9 @@ import '../../../services/local_storage_service.dart';
 import '../model/auth_model.dart';
 
 // Expected backend contract:
-//   POST /auth/login   { email, password } → { token, refreshToken? }
-//   DELETE /auth/logout  (Authorization: Bearer <token>)
+//   POST /auth/login      { email, password }        → { token, refreshToken? }
+//   POST /auth/register   { name, email, password }  → { token, refreshToken? }
+//   DELETE /auth/logout   (Authorization: Bearer <token>)
 class AuthService {
   final ApiClient _apiClient;
 
@@ -25,8 +26,29 @@ class AuthService {
         '/auth/login',
         data: request.toJson(),
       );
-      final authResponse = AuthResponse.fromJson(
-          response.data as Map<String, dynamic>);
+      final authResponse =
+          AuthResponse.fromJson(response.data as Map<String, dynamic>);
+      await LocalStorageService.saveString(
+          AppConstants.kTokenKey, authResponse.token);
+      return ApiResult.success(authResponse);
+    } on DioException catch (e) {
+      final appEx = e.error is AppException
+          ? e.error as AppException
+          : AppException.fromDioException(e);
+      return ApiResult.failure(appEx);
+    } catch (_) {
+      return ApiResult.failure(AppException.unknown());
+    }
+  }
+
+  Future<ApiResult<AuthResponse>> register(RegisterRequest request) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/auth/register',
+        data: request.toJson(),
+      );
+      final authResponse =
+          AuthResponse.fromJson(response.data as Map<String, dynamic>);
       await LocalStorageService.saveString(
           AppConstants.kTokenKey, authResponse.token);
       return ApiResult.success(authResponse);

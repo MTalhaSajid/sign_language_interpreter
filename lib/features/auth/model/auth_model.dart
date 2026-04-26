@@ -10,6 +10,27 @@ class LoginRequest {
   Map<String, dynamic> toJson() => {'email': email, 'password': password};
 }
 
+// ── Register Request ──────────────────────────────────────────────────────────
+// POST /auth/register
+// Body: { "name": "John", "email": "user@example.com", "password": "secret" }
+class RegisterRequest {
+  final String name;
+  final String email;
+  final String password;
+
+  const RegisterRequest({
+    required this.name,
+    required this.email,
+    required this.password,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'email': email,
+        'password': password,
+      };
+}
+
 // ── Auth Response ─────────────────────────────────────────────────────────────
 // Response: { "token": "jwt...", "refreshToken": "rt..." }
 class AuthResponse {
