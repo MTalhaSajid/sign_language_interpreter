@@ -5,7 +5,7 @@ class SettingsController extends ChangeNotifier {
   // Extend here for: language preference, font size, notification settings, etc.
 
   String appVersion = '1.0.0';
-  String appName = 'Boilerplate Flutter';
+  String appName = 'Sign Talk';
 
   Future<void> loadAppInfo() async {
     // package_info_plus can be used here if needed:
