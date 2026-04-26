@@ -1,4 +1,4 @@
-import 'package:boilerplate_flutter/core/widgets/custom_snackbar.dart';
+import 'package:sign_language_interpreter/core/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 
 class DialogService {
