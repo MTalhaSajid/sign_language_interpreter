@@ -17,32 +17,31 @@ class SettingScreen extends StatelessWidget {
     final themeProvider = context.watch<ThemeProvider>();
     final settingsController = context.watch<SettingsController>();
     final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
     ));
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       body: Stack(
         children: [
-          // Top glow
           Positioned(
-            top: -80,
-            right: -60,
+            top: -80, right: -60,
             child: Container(
-              width: 220,
-              height: 220,
-              decoration: AppStyles.glowDecoration(AppColors.blue, 0.06),
+              width: 220, height: 220,
+              decoration:
+                  AppStyles.glowDecoration(AppColors.blue, 0.06),
             ),
           ),
-
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ────────────────────────────────────────────────
+                // ── Header ────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Row(
@@ -50,18 +49,25 @@ class SettingScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () => context.go('/'),
                         child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: AppStyles.cardDecoration(),
-                          child: const Icon(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            borderRadius: AppStyles.radiusMd,
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
                             Icons.arrow_back_ios_new_rounded,
                             size: 16,
-                            color: AppColors.textSecondary,
+                            color: cs.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Text('Settings', style: AppFonts.headingMedium),
+                      Text('Settings',
+                          style: theme.textTheme.headlineMedium),
                     ],
                   ),
                 ),
@@ -72,100 +78,90 @@ class SettingScreen extends StatelessWidget {
                   child: ListView(
                     padding: AppStyles.paddingPage,
                     children: [
-                      // ── Appearance ──────────────────────────────────────
-                      _SectionLabel(label: 'Appearance'),
+                      // ── Appearance ──────────────────────────────────
+                      _SectionLabel('Appearance'),
                       const SizedBox(height: 8),
-                      _SettingsCard(
-                        children: [
-                          _ToggleTile(
-                            icon: isDark
-                                ? Icons.dark_mode_outlined
-                                : Icons.light_mode_outlined,
-                            title: 'Dark Mode',
-                            subtitle: isDark
-                                ? 'Dark theme enabled'
-                                : 'Light theme enabled',
-                            value: isDark,
-                            onChanged: (_) => themeProvider.toggleTheme(),
-                          ),
-                        ],
-                      ),
+                      _SettingsCard(children: [
+                        _ToggleTile(
+                          icon: isDark
+                              ? Icons.dark_mode_outlined
+                              : Icons.light_mode_outlined,
+                          title: 'Dark Mode',
+                          subtitle: isDark
+                              ? 'Dark theme enabled'
+                              : 'Light theme enabled',
+                          value: isDark,
+                          onChanged: (_) => themeProvider.toggleTheme(),
+                        ),
+                      ]),
 
                       const SizedBox(height: 24),
 
-                      // ── Account ─────────────────────────────────────────
-                      _SectionLabel(label: 'Account'),
+                      // ── Account ─────────────────────────────────────
+                      _SectionLabel('Account'),
                       const SizedBox(height: 8),
-                      _SettingsCard(
-                        children: [
-                          _ActionTile(
-                            icon: Icons.logout_rounded,
-                            iconColor: AppColors.error,
-                            title: 'Log out',
-                            titleColor: AppColors.error,
-                            onTap: () => _confirmLogout(context),
-                          ),
-                        ],
-                      ),
+                      _SettingsCard(children: [
+                        _ActionTile(
+                          icon: Icons.logout_rounded,
+                          iconColor: AppColors.error,
+                          title: 'Log out',
+                          titleColor: AppColors.error,
+                          onTap: () => _confirmLogout(context),
+                        ),
+                      ]),
 
                       const SizedBox(height: 24),
 
-                      // ── About ────────────────────────────────────────────
-                      _SectionLabel(label: 'About'),
+                      // ── About ────────────────────────────────────────
+                      _SectionLabel('About'),
                       const SizedBox(height: 8),
-                      _SettingsCard(
-                        children: [
-                          _InfoTile(
-                            icon: Icons.apps_rounded,
-                            title: 'App',
-                            value: settingsController.appName,
-                          ),
-                          _Divider(),
-                          _InfoTile(
-                            icon: Icons.tag_rounded,
-                            title: 'Version',
-                            value: settingsController.appVersion,
-                          ),
-                          _Divider(),
-                          _InfoTile(
-                            icon: Icons.shield_outlined,
-                            title: 'Build',
-                            value: 'Stable',
-                          ),
-                        ],
-                      ),
+                      _SettingsCard(children: [
+                        _InfoTile(
+                          icon: Icons.apps_rounded,
+                          title: 'App',
+                          value: settingsController.appName,
+                        ),
+                        const _CardDivider(),
+                        _InfoTile(
+                          icon: Icons.tag_rounded,
+                          title: 'Version',
+                          value: settingsController.appVersion,
+                        ),
+                        const _CardDivider(),
+                        _InfoTile(
+                          icon: Icons.shield_outlined,
+                          title: 'Build',
+                          value: 'Stable',
+                        ),
+                      ]),
 
                       const SizedBox(height: 40),
 
-                      // ── Footer ────────────────────────────────────────────
+                      // ── Footer ───────────────────────────────────────
                       Center(
                         child: Column(
                           children: [
                             Container(
-                              width: 36,
-                              height: 36,
+                              width: 36, height: 36,
                               decoration: AppStyles.logoDecoration(),
                               child: const Center(
-                                child:
-                                    Text('🤟', style: TextStyle(fontSize: 18)),
+                                child: Text('🤟',
+                                    style: TextStyle(fontSize: 18)),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'SignBridge',
-                              style: AppFonts.labelMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: theme.textTheme.labelSmall,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'v${settingsController.appVersion}',
-                              style: AppFonts.caption,
+                              style: theme.textTheme.bodySmall,
                             ),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -179,22 +175,27 @@ class SettingScreen extends StatelessWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.bgSurface,
-        shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusLg),
+        backgroundColor: cs.surface,
+        shape: RoundedRectangleBorder(
+            borderRadius: AppStyles.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Log out', style: AppFonts.headingSmall),
+              Text('Log out',
+                  style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
                 'Are you sure you want to log out?',
-                style: AppFonts.bodyMedium,
+                style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               Row(
@@ -203,17 +204,15 @@ class SettingScreen extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () => ctx.pop(false),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.bgBorder),
+                        side: BorderSide(
+                            color: theme.dividerColor),
                         shape: RoundedRectangleBorder(
                             borderRadius: AppStyles.radiusMd),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12),
                       ),
-                      child: Text(
-                        'Cancel',
-                        style: AppFonts.bodyMedium
-                            .copyWith(color: AppColors.textSecondary),
-                      ),
+                      child: Text('Cancel',
+                          style: theme.textTheme.bodyMedium),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -225,14 +224,13 @@ class SettingScreen extends StatelessWidget {
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                             borderRadius: AppStyles.radiusMd),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12),
+                        minimumSize: Size.zero,
                       ),
-                      child: Text(
-                        'Log out',
-                        style: AppFonts.bodyMedium
-                            .copyWith(color: Colors.white),
-                      ),
+                      child: Text('Log out',
+                          style: AppFonts.bodyMedium
+                              .copyWith(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -253,23 +251,31 @@ class SettingScreen extends StatelessWidget {
 // ── Section label ─────────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String label;
-  const _SectionLabel({required this.label});
+  const _SectionLabel(this.label);
 
   @override
   Widget build(BuildContext context) {
-    return Text(label.toUpperCase(), style: AppFonts.labelCaps);
+    return Text(
+      label.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall,
+    );
   }
 }
 
-// ── Settings card wrapper ─────────────────────────────────────────────────────
+// ── Card wrapper ──────────────────────────────────────────────────────────────
 class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   const _SettingsCard({required this.children});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      decoration: AppStyles.cardDecoration(),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: AppStyles.radiusMd,
+        border: Border.all(color: theme.dividerColor, width: 1),
+      ),
       child: Column(children: children),
     );
   }
@@ -278,8 +284,7 @@ class _SettingsCard extends StatelessWidget {
 // ── Toggle tile ───────────────────────────────────────────────────────────────
 class _ToggleTile extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String title, subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -293,26 +298,30 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.bgDark,
+              color: theme.scaffoldBackgroundColor,
               borderRadius: AppStyles.radiusSm,
             ),
-            child: Icon(icon, size: 18, color: AppColors.textSecondary),
+            child: Icon(icon, size: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.5)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppFonts.bodyLarge.copyWith(fontSize: 14)),
-                Text(subtitle, style: AppFonts.bodySmall),
+                Text(title,
+                    style: theme.textTheme.bodyLarge
+                        ?.copyWith(fontSize: 14)),
+                Text(subtitle,
+                    style: theme.textTheme.bodySmall),
               ],
             ),
           ),
@@ -320,8 +329,9 @@ class _ToggleTile extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.teal,
-            inactiveTrackColor: AppColors.bgBorder,
-            inactiveThumbColor: AppColors.textSecondary,
+            inactiveTrackColor: theme.dividerColor,
+            inactiveThumbColor:
+                theme.colorScheme.onSurface.withOpacity(0.4),
           ),
         ],
       ),
@@ -329,12 +339,11 @@ class _ToggleTile extends StatelessWidget {
   }
 }
 
-// ── Action tile (e.g. logout) ─────────────────────────────────────────────────
+// ── Action tile ───────────────────────────────────────────────────────────────
 class _ActionTile extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
+  final Color iconColor, titleColor;
   final String title;
-  final Color titleColor;
   final VoidCallback onTap;
 
   const _ActionTile({
@@ -347,16 +356,17 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: AppStyles.radiusMd,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 36, height: 36,
               decoration: BoxDecoration(
                 color: iconColor.withOpacity(0.08),
                 borderRadius: AppStyles.radiusSm,
@@ -364,14 +374,13 @@ class _ActionTile extends StatelessWidget {
               child: Icon(icon, size: 18, color: iconColor),
             ),
             const SizedBox(width: 12),
-            Text(
-              title,
-              style: AppFonts.bodyLarge
-                  .copyWith(fontSize: 14, color: titleColor),
-            ),
+            Text(title,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                    fontSize: 14, color: titleColor)),
             const Spacer(),
             Icon(Icons.chevron_right_rounded,
-                size: 18, color: AppColors.textSecondary),
+                size: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.4)),
           ],
         ),
       ),
@@ -382,8 +391,7 @@ class _ActionTile extends StatelessWidget {
 // ── Info tile ─────────────────────────────────────────────────────────────────
 class _InfoTile extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String value;
+  final String title, value;
 
   const _InfoTile({
     required this.icon,
@@ -393,40 +401,42 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.bgDark,
+              color: theme.scaffoldBackgroundColor,
               borderRadius: AppStyles.radiusSm,
             ),
-            child: Icon(icon, size: 18, color: AppColors.textSecondary),
+            child: Icon(icon, size: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.5)),
           ),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: AppFonts.bodyLarge.copyWith(fontSize: 14),
-          ),
+          Text(title,
+              style: theme.textTheme.bodyLarge
+                  ?.copyWith(fontSize: 14)),
           const Spacer(),
-          Text(value, style: AppFonts.bodyMedium),
+          Text(value, style: theme.textTheme.bodyMedium),
         ],
       ),
     );
   }
 }
 
-// ── Thin divider ──────────────────────────────────────────────────────────────
-class _Divider extends StatelessWidget {
+// ── Divider ───────────────────────────────────────────────────────────────────
+class _CardDivider extends StatelessWidget {
+  const _CardDivider();
+
   @override
   Widget build(BuildContext context) {
-    return const Divider(
+    return Divider(
       height: 1,
       thickness: 1,
-      color: AppColors.bgBorder,
+      color: Theme.of(context).dividerColor,
       indent: 64,
     );
   }
