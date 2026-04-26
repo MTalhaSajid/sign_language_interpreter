@@ -21,8 +21,9 @@ Future<void> setupServiceLocator() async {
   sl.registerSingleton<ConnectivityService>(ConnectivityService());
 
   // ── Feature services ──────────────────────────────────
+  // AuthService now uses Firebase directly — no ApiClient needed
   sl.registerLazySingleton<AuthService>(
-    () => AuthService(sl<ApiClient>()),
+    () => AuthService(),
   );
   sl.registerLazySingleton<UserService>(
     () => UserService(sl<ApiClient>()),

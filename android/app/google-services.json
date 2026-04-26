@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "372737542189",
+    "project_id": "sign-language-interprete-92453",
+    "storage_bucket": "sign-language-interprete-92453.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:372737542189:android:d4753e9d40d8152e2410a4",
+        "android_client_info": {
+          "package_name": "com.example.boilerplate_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3Bc0eHA0RC1DeI-x5sTP8E52KNgR2SAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
