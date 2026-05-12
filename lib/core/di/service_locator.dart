@@ -7,6 +7,8 @@ import '../../features/home/service/user_service.dart';
 import '../../features/auth/controller/auth_controller.dart';
 import '../../features/home/controller/home_controller.dart';
 import '../../features/settings/controller/settings_controller.dart';
+import '../../features/interpreter/service/interpreter_service.dart';
+import '../../features/interpreter/controller/interpreter_controller.dart';
 import '../../providers/theme_provider.dart';
 
 final sl = GetIt.instance;
@@ -16,17 +18,20 @@ Future<void> setupServiceLocator() async {
   sl.registerSingleton<ApiClient>(ApiClient());
 
   // ── Global services ───────────────────────────────────
-  // LocalStorageService uses static methods — no registration needed.
   sl.registerSingleton<DialogService>(DialogService());
   sl.registerSingleton<ConnectivityService>(ConnectivityService());
 
   // ── Feature services ──────────────────────────────────
-  // AuthService now uses Firebase directly — no ApiClient needed
+  // AuthService uses Firebase directly — no ApiClient needed
   sl.registerLazySingleton<AuthService>(
     () => AuthService(),
   );
   sl.registerLazySingleton<UserService>(
     () => UserService(sl<ApiClient>()),
+  );
+  // InterpreterService — loads TFLite model + labels
+  sl.registerLazySingleton<InterpreterService>(
+    () => InterpreterService(),
   );
 
   // ── Controllers ───────────────────────────────────────
@@ -38,6 +43,11 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerLazySingleton<SettingsController>(
     () => SettingsController(),
+  );
+  // InterpreterController — created fresh every time screen opens
+  // (factory so camera/model state is clean each session)
+  sl.registerFactory<InterpreterController>(
+    () => InterpreterController(sl<InterpreterService>()),
   );
   sl.registerLazySingleton<ThemeProvider>(
     () => ThemeProvider(),
