@@ -127,13 +127,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Logo
-                    Container(
-                      width: 44, height: 44,
-                      decoration: AppStyles.logoDecoration(),
-                      child: const Center(
-                          child: Text('🤟',
-                              style: TextStyle(fontSize: 22))),
+                    // ── App icon image ─────────────────────────────────
+                    ClipRRect(
+                      borderRadius: AppStyles.radiusMd,
+                      child: Image.asset(
+                        'assets/images/app_icon.png',
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -148,7 +150,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Name
                     Text('FULL NAME', style: AppFonts.labelCaps),
                     const SizedBox(height: 6),
                     ThemedField(
@@ -164,19 +165,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textColor: textPrimary,
                       hintColor: textDim,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Name is required';
-                        }
-                        if (v.trim().length < 2) {
-                          return 'Name must be at least 2 characters';
-                        }
+                        if (v == null || v.trim().isEmpty) return 'Name is required';
+                        if (v.trim().length < 2) return 'Name must be at least 2 characters';
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 16),
 
-                    // Email
                     Text('EMAIL', style: AppFonts.labelCaps),
                     const SizedBox(height: 6),
                     ThemedField(
@@ -192,19 +188,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textColor: textPrimary,
                       hintColor: textDim,
                       validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return 'Email is required';
-                        }
-                        if (!v.contains('@')) {
-                          return 'Enter a valid email';
-                        }
+                        if (v == null || v.isEmpty) return 'Email is required';
+                        if (!v.contains('@')) return 'Enter a valid email';
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 16),
 
-                    // Password
                     Text('PASSWORD', style: AppFonts.labelCaps),
                     const SizedBox(height: 6),
                     ThemedField(
@@ -231,23 +222,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             () => _obscurePassword = !_obscurePassword),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return 'Password is required';
-                        }
-                        if (v.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
+                        if (v == null || v.isEmpty) return 'Password is required';
+                        if (v.length < 6) return 'Password must be at least 6 characters';
                         return null;
                       },
                     ),
 
                     if (_passwordController.text.isNotEmpty)
-                      _PasswordStrength(
-                          password: _passwordController.text),
+                      _PasswordStrength(password: _passwordController.text),
 
                     const SizedBox(height: 16),
 
-                    // Confirm password
                     Text('CONFIRM PASSWORD', style: AppFonts.labelCaps),
                     const SizedBox(height: 6),
                     ThemedField(
@@ -273,19 +258,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       onFieldSubmitted: (_) => _submit(),
                       validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return 'Please confirm your password';
-                        }
-                        if (v != _passwordController.text) {
-                          return 'Passwords do not match';
-                        }
+                        if (v == null || v.isEmpty) return 'Please confirm your password';
+                        if (v != _passwordController.text) return 'Passwords do not match';
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Error
                     if (controller.errorMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -297,11 +277,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 size: 16, color: AppColors.error),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                controller.errorMessage!,
-                                style: AppFonts.bodySmall
-                                    .copyWith(color: AppColors.error),
-                              ),
+                              child: Text(controller.errorMessage!,
+                                  style: AppFonts.bodySmall
+                                      .copyWith(color: AppColors.error)),
                             ),
                           ],
                         ),
@@ -309,7 +287,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    // Create account button
                     GradientButton(
                       label: 'Create Account',
                       isLoading: controller.isLoading,
@@ -318,7 +295,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Sign in redirect
                     Center(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -346,7 +322,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// ── Password strength ─────────────────────────────────────────────────────────
 class _PasswordStrength extends StatelessWidget {
   final String password;
   const _PasswordStrength({required this.password});
@@ -376,19 +351,16 @@ class _PasswordStrength extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          ...List.generate(
-            5,
-            (i) => Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(right: 4),
-                height: 3,
-                decoration: BoxDecoration(
-                  color: i < _score ? _color : AppColors.bgLoader,
-                  borderRadius: BorderRadius.circular(4),
+          ...List.generate(5, (i) => Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: i < _score ? _color : AppColors.bgLoader,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-            ),
-          ),
+              )),
           const SizedBox(width: 8),
           Text(_label,
               style: AppFonts.bodySmall.copyWith(

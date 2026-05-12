@@ -31,7 +31,6 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Glows
           Positioned(
             top: -80, right: -60,
             child: Container(
@@ -52,22 +51,22 @@ class HomeScreen extends StatelessWidget {
           SafeArea(
             child: CustomScrollView(
               slivers: [
-                // ── Top bar ─────────────────────────────────────────
+                // ── Top bar ───────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                     child: Row(
                       children: [
-                        Container(
-                          width: 36, height: 36,
-                          decoration: AppStyles.logoDecoration(),
-                          child: const Center(
-                              child: Text('🤟',
-                                  style: TextStyle(fontSize: 18))),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            'assets/images/app_icon.png',
+                            width: 36, height: 36,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         const SizedBox(width: 10),
-                        Text('SignBridge',
+                        Text('Sign Talk',
                             style: AppFonts.headingSmall.copyWith(
                                 color: theme.colorScheme.onSurface)),
                         const Spacer(),
@@ -92,11 +91,10 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                // ── Welcome ──────────────────────────────────────────
+                // ── Welcome ───────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -119,88 +117,66 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                // ── Hero feature card ────────────────────────────────
+                // ── Hero card ─────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                     child: _HeroCard(
-                      onTap: () =>
-                          context.go('/interpreter'),
-                    ),
+                        onTap: () => context.go('/interpreter')),
                   ),
                 ),
 
-                // ── Section label ────────────────────────────────────
+                // ── Section label ─────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(24, 28, 24, 8),
-                    child: Text(
-                      'MORE FEATURES',
-                      style: AppFonts.labelCaps.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withOpacity(0.5)),
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 8),
+                    child: Text('MORE FEATURES',
+                        style: AppFonts.labelCaps.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withOpacity(0.5))),
                   ),
                 ),
 
-                // ── Feature grid ─────────────────────────────────────
+                // ── Feature grid ──────────────────────────────────────
                 SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   sliver: SliverGrid(
                     delegate: SliverChildListDelegate([
                       _FeatureCard(
-                        icon: Icons.text_fields_rounded,
                         emoji: '✍️',
                         title: 'Word to Sign',
                         subtitle: 'Type a word, see its sign',
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF1A3A5C),
-                            Color(0xFF0F2240),
-                          ],
+                          colors: [Color(0xFF1A3A5C), Color(0xFF0F2240)],
                         ),
                         accentColor: AppColors.blue,
-                        onTap: () =>
-                            context.go('/word-to-sign'),
+                        onTap: () => context.go('/word-to-sign'),
                       ),
                       _FeatureCard(
-                        icon: Icons.image_search_rounded,
                         emoji: '🔍',
                         title: 'Sign to Word',
                         subtitle: 'Upload a sign image',
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF0A2A2A),
-                            Color(0xFF051A1A),
-                          ],
+                          colors: [Color(0xFF0A2A2A), Color(0xFF051A1A)],
                         ),
                         accentColor: AppColors.teal,
-                        onTap: () =>
-                            context.go('/sign-to-word'),
+                        onTap: () => context.go('/sign-to-word'),
                       ),
                       _FeatureCard(
-                        icon: Icons.sort_by_alpha_rounded,
                         emoji: '🔤',
                         title: 'Sign Alphabet',
                         subtitle: 'Browse A–Z signs',
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF2A1A3A),
-                            Color(0xFF1A0F2A),
-                          ],
+                          colors: [Color(0xFF2A1A3A), Color(0xFF1A0F2A)],
                         ),
                         accentColor: Color(0xFF9B6EFF),
-                        onTap: () =>
-                            context.go('/alphabet'),
+                        onTap: () => context.go('/alphabet'),
                       ),
                     ]),
                     gridDelegate:
@@ -213,8 +189,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SliverToBoxAdapter(
-                    child: SizedBox(height: 32)),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             ),
           ),
@@ -224,7 +199,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ── Hero card — live interpreter ──────────────────────────────────────────────
+// ── Hero card — overlap fixed ─────────────────────────────────────────────────
 class _HeroCard extends StatelessWidget {
   final VoidCallback onTap;
   const _HeroCard({required this.onTap});
@@ -234,7 +209,6 @@ class _HeroCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 160,
         decoration: BoxDecoration(
           borderRadius: AppStyles.radiusLg,
           gradient: const LinearGradient(
@@ -243,101 +217,87 @@ class _HeroCard extends StatelessWidget {
             colors: [AppColors.teal, AppColors.blue],
           ),
         ),
-        child: Stack(
+        padding: const EdgeInsets.all(20),
+        child: Row(
           children: [
-            // Background pattern
-            Positioned(
-              right: -20, top: -20,
-              child: Container(
-                width: 140, height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 20, bottom: -30,
-              child: Container(
-                width: 100, height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
-                ),
+            // ── Left: icon ──────────────────────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/app_icon.png',
+                width: 72, height: 72,
+                fit: BoxFit.cover,
               ),
             ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(24),
+            const SizedBox(width: 16),
+
+            // ── Right: text + badge ─────────────────────────────────
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: AppStyles.radiusFull,
+                  // Live badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: AppStyles.radiusFull,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5, height: 5,
+                          decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6, height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text('LIVE',
-                                style: AppFonts.labelCaps.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 9)),
-                          ],
-                        ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Text('LIVE',
+                            style: AppFonts.labelCaps.copyWith(
+                                color: Colors.white, fontSize: 9)),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  Text(
-                    'Live Interpreter',
-                    style: AppFonts.headingMedium
-                        .copyWith(color: Colors.white),
-                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text('Live Interpreter',
+                      style: AppFonts.headingSmall
+                          .copyWith(color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text(
-                    'Real-time sign language recognition',
-                    style: AppFonts.bodyMedium
-                        .copyWith(color: Colors.white70),
+                  Text('Real-time sign language\nrecognition',
+                      style: AppFonts.bodySmall
+                          .copyWith(color: Colors.white70)),
+
+                  const SizedBox(height: 12),
+
+                  // Start button
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: AppStyles.radiusMd,
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.3), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.play_arrow_rounded,
+                            color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text('Start',
+                            style: AppFonts.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
                   ),
                 ],
-              ),
-            ),
-
-            // Arrow
-            Positioned(
-              right: 20, bottom: 20,
-              child: Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: AppStyles.radiusMd,
-                ),
-                child: const Icon(Icons.arrow_forward_rounded,
-                    color: Colors.white, size: 18),
-              ),
-            ),
-
-            // Large hand emoji
-            Positioned(
-              right: 24, top: 0, bottom: 0,
-              child: Center(
-                child: Text('🤟',
-                    style: const TextStyle(fontSize: 64)),
               ),
             ),
           ],
@@ -349,14 +309,12 @@ class _HeroCard extends StatelessWidget {
 
 // ── Feature card ──────────────────────────────────────────────────────────────
 class _FeatureCard extends StatelessWidget {
-  final IconData icon;
   final String emoji, title, subtitle;
   final LinearGradient gradient;
   final Color accentColor;
   final VoidCallback onTap;
 
   const _FeatureCard({
-    required this.icon,
     required this.emoji,
     required this.title,
     required this.subtitle,
@@ -376,7 +334,6 @@ class _FeatureCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: AppStyles.radiusLg,
-          // dark: rich gradient bg, light: clean surface with accent border
           color: isDark ? null : Theme.of(context).colorScheme.surface,
           gradient: isDark ? gradient : null,
           border: Border.all(
@@ -389,7 +346,6 @@ class _FeatureCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon box
             Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
@@ -397,34 +353,29 @@ class _FeatureCard extends StatelessWidget {
                 borderRadius: AppStyles.radiusMd,
               ),
               child: Center(
-                child: Text(emoji,
-                    style: const TextStyle(fontSize: 20)),
-              ),
+                  child: Text(emoji,
+                      style: const TextStyle(fontSize: 20))),
             ),
             const Spacer(),
-            Text(
-              title,
-              style: AppFonts.headingSmall.copyWith(
-                fontSize: 14,
-                color: isDark
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
+            Text(title,
+                style: AppFonts.headingSmall.copyWith(
+                  fontSize: 14,
+                  color: isDark
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                )),
             const SizedBox(height: 3),
-            Text(
-              subtitle,
-              style: AppFonts.bodySmall.copyWith(
-                color: isDark
-                    ? Colors.white54
-                    : Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.5),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(subtitle,
+                style: AppFonts.bodySmall.copyWith(
+                  color: isDark
+                      ? Colors.white54
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
           ],
         ),
       ),

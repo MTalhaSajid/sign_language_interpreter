@@ -41,7 +41,6 @@ class SettingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Row(
@@ -54,15 +53,11 @@ class SettingScreen extends StatelessWidget {
                             color: cs.surface,
                             borderRadius: AppStyles.radiusMd,
                             border: Border.all(
-                              color: theme.dividerColor,
-                              width: 1,
-                            ),
+                                color: theme.dividerColor, width: 1),
                           ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 16,
-                            color: cs.onSurface.withOpacity(0.6),
-                          ),
+                          child: Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 16,
+                              color: cs.onSurface.withOpacity(0.6)),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -78,7 +73,6 @@ class SettingScreen extends StatelessWidget {
                   child: ListView(
                     padding: AppStyles.paddingPage,
                     children: [
-                      // ── Appearance ──────────────────────────────────
                       _SectionLabel('Appearance'),
                       const SizedBox(height: 8),
                       _SettingsCard(children: [
@@ -97,7 +91,6 @@ class SettingScreen extends StatelessWidget {
 
                       const SizedBox(height: 24),
 
-                      // ── Account ─────────────────────────────────────
                       _SectionLabel('Account'),
                       const SizedBox(height: 8),
                       _SettingsCard(children: [
@@ -112,53 +105,45 @@ class SettingScreen extends StatelessWidget {
 
                       const SizedBox(height: 24),
 
-                      // ── About ────────────────────────────────────────
                       _SectionLabel('About'),
                       const SizedBox(height: 8),
                       _SettingsCard(children: [
                         _InfoTile(
-                          icon: Icons.apps_rounded,
-                          title: 'App',
-                          value: settingsController.appName,
-                        ),
+                            icon: Icons.apps_rounded,
+                            title: 'App',
+                            value: settingsController.appName),
                         const _CardDivider(),
                         _InfoTile(
-                          icon: Icons.tag_rounded,
-                          title: 'Version',
-                          value: settingsController.appVersion,
-                        ),
+                            icon: Icons.tag_rounded,
+                            title: 'Version',
+                            value: settingsController.appVersion),
                         const _CardDivider(),
                         _InfoTile(
-                          icon: Icons.shield_outlined,
-                          title: 'Build',
-                          value: 'Stable',
-                        ),
+                            icon: Icons.shield_outlined,
+                            title: 'Build',
+                            value: 'Stable'),
                       ]),
 
                       const SizedBox(height: 40),
 
-                      // ── Footer ───────────────────────────────────────
+                      // ── Footer with image asset ──────────────────
                       Center(
                         child: Column(
                           children: [
-                            Container(
-                              width: 36, height: 36,
-                              decoration: AppStyles.logoDecoration(),
-                              child: const Center(
-                                child: Text('🤟',
-                                    style: TextStyle(fontSize: 18)),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                'assets/images/app_icon.png',
+                                width: 44, height: 44,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'SignBridge',
-                              style: theme.textTheme.labelSmall,
-                            ),
+                            const SizedBox(height: 10),
+                            Text('Sign Talk',
+                                style: theme.textTheme.labelSmall),
                             const SizedBox(height: 4),
-                            Text(
-                              'v${settingsController.appVersion}',
-                              style: theme.textTheme.bodySmall,
-                            ),
+                            Text('v${settingsController.appVersion}',
+                                style: theme.textTheme.bodySmall),
                           ],
                         ),
                       ),
@@ -177,7 +162,6 @@ class SettingScreen extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context) async {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
@@ -190,13 +174,10 @@ class SettingScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Log out',
-                  style: theme.textTheme.headlineSmall),
+              Text('Log out', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to log out?',
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text('Are you sure you want to log out?',
+                  style: theme.textTheme.bodyMedium),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -204,12 +185,11 @@ class SettingScreen extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () => ctx.pop(false),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: theme.dividerColor),
+                        side: BorderSide(color: theme.dividerColor),
                         shape: RoundedRectangleBorder(
                             borderRadius: AppStyles.radiusMd),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: Text('Cancel',
                           style: theme.textTheme.bodyMedium),
@@ -224,8 +204,8 @@ class SettingScreen extends StatelessWidget {
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                             borderRadius: AppStyles.radiusMd),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 12),
                         minimumSize: Size.zero,
                       ),
                       child: Text('Log out',
@@ -240,7 +220,6 @@ class SettingScreen extends StatelessWidget {
         ),
       ),
     );
-
     if (confirmed == true && context.mounted) {
       await context.read<AuthController>().logout();
       if (context.mounted) context.go('/login');
@@ -248,25 +227,17 @@ class SettingScreen extends StatelessWidget {
   }
 }
 
-// ── Section label ─────────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String label;
   const _SectionLabel(this.label);
-
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      label.toUpperCase(),
-      style: Theme.of(context).textTheme.labelSmall,
-    );
-  }
+  Widget build(BuildContext context) =>
+      Text(label.toUpperCase(), style: Theme.of(context).textTheme.labelSmall);
 }
 
-// ── Card wrapper ──────────────────────────────────────────────────────────────
 class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   const _SettingsCard({required this.children});
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -281,21 +252,13 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-// ── Toggle tile ───────────────────────────────────────────────────────────────
 class _ToggleTile extends StatelessWidget {
   final IconData icon;
   final String title, subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
-
-  const _ToggleTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
+  const _ToggleTile({required this.icon, required this.title,
+      required this.subtitle, required this.value, required this.onChanged});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -317,11 +280,8 @@ class _ToggleTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontSize: 14)),
-                Text(subtitle,
-                    style: theme.textTheme.bodySmall),
+                Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontSize: 14)),
+                Text(subtitle, style: theme.textTheme.bodySmall),
               ],
             ),
           ),
@@ -330,8 +290,7 @@ class _ToggleTile extends StatelessWidget {
             onChanged: onChanged,
             activeColor: AppColors.teal,
             inactiveTrackColor: theme.dividerColor,
-            inactiveThumbColor:
-                theme.colorScheme.onSurface.withOpacity(0.4),
+            inactiveThumbColor: theme.colorScheme.onSurface.withOpacity(0.4),
           ),
         ],
       ),
@@ -339,21 +298,13 @@ class _ToggleTile extends StatelessWidget {
   }
 }
 
-// ── Action tile ───────────────────────────────────────────────────────────────
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor, titleColor;
   final String title;
   final VoidCallback onTap;
-
-  const _ActionTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.titleColor,
-    required this.onTap,
-  });
-
+  const _ActionTile({required this.icon, required this.iconColor,
+      required this.title, required this.titleColor, required this.onTap});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -361,8 +312,7 @@ class _ActionTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppStyles.radiusMd,
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
@@ -374,12 +324,10 @@ class _ActionTile extends StatelessWidget {
               child: Icon(icon, size: 18, color: iconColor),
             ),
             const SizedBox(width: 12),
-            Text(title,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                    fontSize: 14, color: titleColor)),
+            Text(title, style: theme.textTheme.bodyLarge
+                ?.copyWith(fontSize: 14, color: titleColor)),
             const Spacer(),
-            Icon(Icons.chevron_right_rounded,
-                size: 18,
+            Icon(Icons.chevron_right_rounded, size: 18,
                 color: theme.colorScheme.onSurface.withOpacity(0.4)),
           ],
         ),
@@ -388,17 +336,10 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-// ── Info tile ─────────────────────────────────────────────────────────────────
 class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String title, value;
-
-  const _InfoTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
+  const _InfoTile({required this.icon, required this.title, required this.value});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -416,9 +357,7 @@ class _InfoTile extends StatelessWidget {
                 color: theme.colorScheme.onSurface.withOpacity(0.5)),
           ),
           const SizedBox(width: 12),
-          Text(title,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(fontSize: 14)),
+          Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontSize: 14)),
           const Spacer(),
           Text(value, style: theme.textTheme.bodyMedium),
         ],
@@ -427,17 +366,12 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-// ── Divider ───────────────────────────────────────────────────────────────────
 class _CardDivider extends StatelessWidget {
   const _CardDivider();
-
   @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: Theme.of(context).dividerColor,
-      indent: 64,
-    );
-  }
+  Widget build(BuildContext context) => Divider(
+        height: 1, thickness: 1,
+        color: Theme.of(context).dividerColor,
+        indent: 64,
+      );
 }
