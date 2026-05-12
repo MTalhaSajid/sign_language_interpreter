@@ -146,6 +146,7 @@ class _MyAppState extends State<MyApp> {
     _listenConnectivity();
   }
 
+
   void _listenConnectivity() {
     sl<ConnectivityService>().onConnectivityChanged.listen((isOnline) {
       if (!isOnline) {

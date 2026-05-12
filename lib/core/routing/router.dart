@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../features/auth/controller/auth_controller.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/auth/view/register_screen.dart';
 import '../../features/home/view/home_screen.dart';
 import '../../features/settings/view/setting_screen.dart';
 import '../../features/splash/view/splash_screen.dart';
+import '../../features/interpreter/controller/interpreter_controller.dart';
+import '../../features/interpreter/view/interpreter_screen.dart';
 import '../../core/di/service_locator.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// The [AuthController] is used as a [refreshListenable] so the guard
-/// re-evaluates on every login/logout event.
 GoRouter buildRouter() {
   final authController = sl<AuthController>();
 
@@ -25,12 +26,8 @@ GoRouter buildRouter() {
       final isLoginRoute = state.matchedLocation == '/login';
       final isRegisterRoute = state.matchedLocation == '/register';
 
-      // Always let splash through — it handles its own navigation
       if (isSplash) return null;
-
-      // Allow unauthenticated users to access login and register
       if (!loggedIn && (isLoginRoute || isRegisterRoute)) return null;
-
       if (!loggedIn) return '/login';
       if (loggedIn && (isLoginRoute || isRegisterRoute)) return '/';
       return null;
@@ -55,6 +52,14 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingScreen(),
+      ),
+      // ── Interpreter — fresh controller every visit ──────────────────────
+      GoRoute(
+        path: '/interpreter',
+        builder: (context, state) => ChangeNotifierProvider<InterpreterController>(
+          create: (_) => sl<InterpreterController>(),
+          child: const InterpreterScreen(),
+        ),
       ),
     ],
   );
