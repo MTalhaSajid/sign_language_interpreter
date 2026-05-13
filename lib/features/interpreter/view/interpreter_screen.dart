@@ -2,12 +2,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_fonts.dart';
 import '../../../core/theme/app_styles.dart';
 import '../controller/interpreter_controller.dart';
-import '../model/interpreter_result.dart';
 
 class InterpreterScreen extends StatefulWidget {
   const InterpreterScreen({super.key});
@@ -24,22 +24,15 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   @override
   void initState() {
     super.initState();
-
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ));
-
-    // Pulse animation for confirmed letter
     _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
-    );
+        vsync: this, duration: const Duration(milliseconds: 300));
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.2)
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut));
 
-    // Initialize the controller
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InterpreterController>().initialize();
     });
@@ -55,7 +48,6 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   Widget build(BuildContext context) {
     final controller = context.watch<InterpreterController>();
 
-    // Pulse when letter confirmed
     if (controller.state == InterpreterState.confirmed) {
       _pulseCtrl.forward().then((_) => _pulseCtrl.reverse());
     }
@@ -65,24 +57,11 @@ class _InterpreterScreenState extends State<InterpreterScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top bar ──────────────────────────────────────────────────────
             _buildTopBar(context, controller),
-
-            // ── Camera view + overlay ─────────────────────────────────────────
-            Expanded(
-              flex: 5,
-              child: _buildCameraSection(controller),
-            ),
-
-            // ── Prediction panel ──────────────────────────────────────────────
+            Expanded(flex: 5, child: _buildCameraSection(controller)),
             _buildPredictionPanel(controller),
-
-            // ── Text output ────────────────────────────────────────────────────
             _buildTextOutput(controller),
-
-            // ── Controls ───────────────────────────────────────────────────────
-            _buildControls(context, controller),
-
+            _buildControls(controller),
             const SizedBox(height: 8),
           ],
         ),
@@ -90,7 +69,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  // ── Top bar ─────────────────────────────────────────────────────────────────
+  // ── Top bar ────────────────────────────────────────────────────────────────
   Widget _buildTopBar(BuildContext context, InterpreterController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -100,11 +79,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
             onTap: () => context.go('/'),
             child: Container(
               width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.bgSurface,
-                borderRadius: AppStyles.radiusMd,
-                border: Border.all(color: AppColors.bgBorder, width: 1),
-              ),
+              decoration: AppStyles.cardDecoration(),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 15, color: AppColors.textSecondary),
             ),
@@ -122,7 +97,6 @@ class _InterpreterScreenState extends State<InterpreterScreen>
             ],
           ),
           const Spacer(),
-          // TTS toggle
           GestureDetector(
             onTap: controller.toggleTts,
             child: Container(
@@ -151,16 +125,11 @@ class _InterpreterScreenState extends State<InterpreterScreen>
             ),
           ),
           const SizedBox(width: 8),
-          // Flip camera
           GestureDetector(
             onTap: controller.flipCamera,
             child: Container(
               width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.bgSurface,
-                borderRadius: AppStyles.radiusMd,
-                border: Border.all(color: AppColors.bgBorder, width: 1),
-              ),
+              decoration: AppStyles.cardDecoration(),
               child: const Icon(Icons.flip_camera_ios_rounded,
                   size: 18, color: AppColors.textSecondary),
             ),
@@ -170,7 +139,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  // ── Camera section ───────────────────────────────────────────────────────
+  // ── Camera section ─────────────────────────────────────────────────────────
   Widget _buildCameraSection(InterpreterController controller) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -179,22 +148,23 @@ class _InterpreterScreenState extends State<InterpreterScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Camera preview
-            if (controller.isCameraReady)
+            if (controller.state == InterpreterState.error)
+              _buildErrorState(controller)
+            else if (controller.isCameraReady)
               CameraPreview(controller.cameraController!)
             else
-              _buildCameraPlaceholder(controller),
+              _buildLoadingState(),
 
-            // Hand landmark overlay
+            // Landmark overlay
             if (controller.detectedHands.isNotEmpty)
               CustomPaint(
                 painter: _LandmarkPainter(controller.detectedHands),
               ),
 
             // Camera frame corners
-            _buildCameraFrame(),
+            CustomPaint(painter: _CameraFramePainter()),
 
-            // Status badge top-right
+            // Status badge
             Positioned(
               top: 12, right: 12,
               child: _buildStatusBadge(controller),
@@ -205,49 +175,43 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  Widget _buildCameraPlaceholder(InterpreterController controller) {
+  Widget _buildLoadingState() {
     return Container(
       color: AppColors.bgSurface,
-      child: Center(
-        child: controller.state == InterpreterState.error
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 40),
-                  const SizedBox(height: 8),
-                  Text(
-                    controller.errorMessage ?? 'Error',
-                    style: AppFonts.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(
-                      color: AppColors.teal, strokeWidth: 2),
-                  const SizedBox(height: 12),
-                  Text('Initializing camera...',
-                      style: AppFonts.bodySmall
-                          .copyWith(color: AppColors.textSecondary)),
-                ],
-              ),
+      child: const Center(
+        child: CircularProgressIndicator(
+            color: AppColors.teal, strokeWidth: 2),
       ),
     );
   }
 
-  Widget _buildCameraFrame() {
-    return CustomPaint(painter: _CameraFramePainter());
+  Widget _buildErrorState(InterpreterController controller) {
+    return Container(
+      color: AppColors.bgSurface,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline,
+                  color: AppColors.error, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                controller.errorMessage ?? 'Initialization failed',
+                style: AppFonts.bodySmall
+                    .copyWith(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildStatusBadge(InterpreterController controller) {
-    final isDetecting =
-        controller.currentResult.isHandDetected &&
-            controller.currentResult.isConfident;
-
+    final isDetecting = controller.currentResult.isHandDetected;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -274,9 +238,8 @@ class _InterpreterScreenState extends State<InterpreterScreen>
           Text(
             isDetecting ? 'DETECTING' : 'WAITING',
             style: AppFonts.labelCaps.copyWith(
-              color: isDetecting
-                  ? Colors.white
-                  : AppColors.textSecondary,
+              color:
+                  isDetecting ? Colors.white : AppColors.textSecondary,
               fontSize: 8,
             ),
           ),
@@ -285,7 +248,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  // ── Prediction panel ──────────────────────────────────────────────────────
+  // ── Prediction panel ───────────────────────────────────────────────────────
   Widget _buildPredictionPanel(InterpreterController controller) {
     final result = controller.currentResult;
     final hasLetter = result.isHandDetected && result.letter.isNotEmpty;
@@ -293,14 +256,9 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: AppStyles.radiusMd,
-        border: Border.all(color: AppColors.bgBorder, width: 1),
-      ),
+      decoration: AppStyles.cardDecoration(),
       child: Row(
         children: [
-          // Current letter (big)
           ScaleTransition(
             scale: _pulseAnim,
             child: Container(
@@ -332,10 +290,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
               ),
             ),
           ),
-
           const SizedBox(width: 16),
-
-          // Confidence + hold progress
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,21 +304,17 @@ class _InterpreterScreenState extends State<InterpreterScreen>
                   ),
                 ),
                 const SizedBox(height: 6),
-
-                // Confidence bar
                 if (hasLetter) ...[
-                  Row(
-                    children: [
-                      Text('Confidence ',
-                          style: AppFonts.bodySmall
-                              .copyWith(color: AppColors.textSecondary)),
-                      Text(
-                        '${(result.confidence * 100).toStringAsFixed(0)}%',
+                  Row(children: [
+                    Text('Confidence ',
                         style: AppFonts.bodySmall
-                            .copyWith(color: AppColors.teal),
-                      ),
-                    ],
-                  ),
+                            .copyWith(color: AppColors.textSecondary)),
+                    Text(
+                      '${(result.confidence * 100).toStringAsFixed(0)}%',
+                      style:
+                          AppFonts.bodySmall.copyWith(color: AppColors.teal),
+                    ),
+                  ]),
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
@@ -379,33 +330,27 @@ class _InterpreterScreenState extends State<InterpreterScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-
-                  // Hold progress bar
-                  Row(
-                    children: [
-                      Text('Hold ',
-                          style: AppFonts.bodySmall
-                              .copyWith(color: AppColors.textSecondary)),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: controller.holdProgress,
-                            minHeight: 4,
-                            backgroundColor: AppColors.bgDark,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.blue),
-                          ),
+                  Row(children: [
+                    Text('Hold ',
+                        style: AppFonts.bodySmall
+                            .copyWith(color: AppColors.textSecondary)),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: controller.holdProgress,
+                          minHeight: 4,
+                          backgroundColor: AppColors.bgDark,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.blue),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ] else
-                  Text(
-                    'Show your hand to the camera',
-                    style: AppFonts.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
+                  Text('Show your hand to the camera',
+                      style: AppFonts.bodySmall
+                          .copyWith(color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -414,46 +359,33 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  // ── Text output ──────────────────────────────────────────────────────────
+  // ── Text output ────────────────────────────────────────────────────────────
   Widget _buildTextOutput(InterpreterController controller) {
     final text = controller.fullText;
-
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       padding: const EdgeInsets.all(14),
       constraints: const BoxConstraints(minHeight: 60, maxHeight: 100),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: AppStyles.radiusMd,
-        border: Border.all(color: AppColors.bgBorder, width: 1),
-      ),
+      decoration: AppStyles.cardDecoration(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: text.isEmpty
-                ? Text(
-                    'Recognized text will appear here...',
+                ? Text('Recognized text will appear here...',
                     style: AppFonts.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
-                  )
+                        .copyWith(color: AppColors.textSecondary))
                 : SingleChildScrollView(
-                    child: Text(
-                      text,
-                      style: AppFonts.bodyLarge
-                          .copyWith(color: AppColors.textPrimary),
-                    ),
-                  ),
+                    child: Text(text,
+                        style: AppFonts.bodyLarge
+                            .copyWith(color: AppColors.textPrimary))),
           ),
           if (text.isNotEmpty) ...[
             const SizedBox(width: 8),
             GestureDetector(
               onTap: controller.speakAll,
-              child: Icon(
-                Icons.record_voice_over_rounded,
-                size: 18,
-                color: AppColors.teal,
-              ),
+              child: const Icon(Icons.record_voice_over_rounded,
+                  size: 18, color: AppColors.teal),
             ),
           ],
         ],
@@ -461,46 +393,26 @@ class _InterpreterScreenState extends State<InterpreterScreen>
     );
   }
 
-  // ── Controls ─────────────────────────────────────────────────────────────
-  Widget _buildControls(
-      BuildContext context, InterpreterController controller) {
+  // ── Controls ───────────────────────────────────────────────────────────────
+  Widget _buildControls(InterpreterController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Row(
         children: [
-          // Space
-          Expanded(
-            child: _ControlButton(
-              label: 'Space',
-              icon: Icons.space_bar_rounded,
-              onTap: controller.addSpace,
-              color: AppColors.blue,
-            ),
-          ),
+          Expanded(child: _ControlButton(
+              label: 'Space', icon: Icons.space_bar_rounded,
+              onTap: controller.addSpace, color: AppColors.blue)),
           const SizedBox(width: 8),
-          // Delete
-          Expanded(
-            child: _ControlButton(
-              label: 'Delete',
-              icon: Icons.backspace_outlined,
+          Expanded(child: _ControlButton(
+              label: 'Delete', icon: Icons.backspace_outlined,
               onTap: controller.deleteLastLetter,
-              color: Colors.orangeAccent,
-            ),
-          ),
+              color: Colors.orangeAccent)),
           const SizedBox(width: 8),
-          // Clear all
-          Expanded(
-            child: _ControlButton(
-              label: 'Clear',
-              icon: Icons.clear_all_rounded,
-              onTap: controller.clearAll,
-              color: AppColors.error,
-            ),
-          ),
+          Expanded(child: _ControlButton(
+              label: 'Clear', icon: Icons.clear_all_rounded,
+              onTap: controller.clearAll, color: AppColors.error)),
           const SizedBox(width: 8),
-          // Speak
-          Expanded(
-            child: _ControlButton(
+          Expanded(child: _ControlButton(
               label: controller.isSpeaking ? 'Stop' : 'Speak',
               icon: controller.isSpeaking
                   ? Icons.stop_circle_outlined
@@ -508,9 +420,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
               onTap: controller.isSpeaking
                   ? controller.stopSpeaking
                   : controller.speakAll,
-              color: AppColors.teal,
-            ),
-          ),
+              color: AppColors.teal)),
         ],
       ),
     );
@@ -525,10 +435,8 @@ class _ControlButton extends StatelessWidget {
   final Color color;
 
   const _ControlButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    required this.color,
+    required this.label, required this.icon,
+    required this.onTap, required this.color,
   });
 
   @override
@@ -547,11 +455,11 @@ class _ControlButton extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: color),
             const SizedBox(height: 3),
-            Text(
-              label,
-              style: AppFonts.bodySmall.copyWith(
-                  color: color, fontWeight: FontWeight.w600, fontSize: 10),
-            ),
+            Text(label,
+                style: AppFonts.bodySmall.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10)),
           ],
         ),
       ),
@@ -559,14 +467,13 @@ class _ControlButton extends StatelessWidget {
   }
 }
 
-// ── Camera frame corner painter ───────────────────────────────────────────────
+// ── Camera frame painter ───────────────────────────────────────────────────────
 class _CameraFramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..shader = const LinearGradient(
-        colors: [AppColors.teal, AppColors.blue],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..shader = const LinearGradient(colors: [AppColors.teal, AppColors.blue])
+          .createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
@@ -574,66 +481,34 @@ class _CameraFramePainter extends CustomPainter {
     const len = 24.0;
     const r = 12.0;
 
-    // Top-left
-    canvas.drawLine(Offset(r, 0), Offset(r + len, 0), paint);
-    canvas.drawLine(Offset(0, r), Offset(0, r + len), paint);
-    canvas.drawArc(const Rect.fromLTWH(0, 0, r * 2, r * 2),
-        3.14159, 3.14159 / 2, false, paint);
+    void corner(double x, double y, double dx1, double dy1, double dx2,
+        double dy2) {
+      canvas.drawLine(Offset(x, y), Offset(x + dx1, y + dy1), paint);
+      canvas.drawLine(Offset(x, y), Offset(x + dx2, y + dy2), paint);
+    }
 
-    // Top-right
-    canvas.drawLine(
-        Offset(size.width - r - len, 0), Offset(size.width - r, 0), paint);
-    canvas.drawLine(Offset(size.width, r), Offset(size.width, r + len), paint);
-    canvas.drawArc(
-        Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2),
-        3.14159 * 1.5,
-        3.14159 / 2,
-        false,
-        paint);
-
-    // Bottom-left
-    canvas.drawLine(
-        Offset(r, size.height), Offset(r + len, size.height), paint);
-    canvas.drawLine(
-        Offset(0, size.height - r - len), Offset(0, size.height - r), paint);
-    canvas.drawArc(
-        Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2),
-        3.14159 / 2,
-        3.14159 / 2,
-        false,
-        paint);
-
-    // Bottom-right
-    canvas.drawLine(Offset(size.width - r - len, size.height),
-        Offset(size.width - r, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height - r - len),
-        Offset(size.width, size.height - r), paint);
-    canvas.drawArc(
-        Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2),
-        0,
-        3.14159 / 2,
-        false,
-        paint);
+    corner(r, r, len, 0, 0, len);
+    corner(size.width - r, r, -len, 0, 0, len);
+    corner(r, size.height - r, len, 0, 0, -len);
+    corner(size.width - r, size.height - r, -len, 0, 0, -len);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ── Hand landmark painter ─────────────────────────────────────────────────────
+// ── Landmark painter ──────────────────────────────────────────────────────────
 class _LandmarkPainter extends CustomPainter {
-  final List<dynamic> hands;
-
+  final List<Hand> hands;
   _LandmarkPainter(this.hands);
 
-  // MediaPipe hand landmark connections
   static const _connections = [
-    [0, 1], [1, 2], [2, 3], [3, 4],       // thumb
-    [0, 5], [5, 6], [6, 7], [7, 8],       // index
-    [0, 9], [9, 10], [10, 11], [11, 12],  // middle
-    [0, 13], [13, 14], [14, 15], [15, 16], // ring
-    [0, 17], [17, 18], [18, 19], [19, 20], // pinky
-    [5, 9], [9, 13], [13, 17],             // palm
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [0,9],[9,10],[10,11],[11,12],
+    [0,13],[13,14],[14,15],[15,16],
+    [0,17],[17,18],[18,19],[19,20],
+    [5,9],[9,13],[13,17],
   ];
 
   @override
@@ -649,18 +524,17 @@ class _LandmarkPainter extends CustomPainter {
       ..color = AppColors.teal
       ..style = PaintingStyle.fill;
 
-    final dotPaintTip = Paint()
+    final tipPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
     for (final hand in hands) {
-      final landmarks = hand.landmarks as List;
-      if (landmarks.length < 21) continue;
+      final lms = hand.landmarks;
+      if (lms.length < 21) continue;
 
-      // Draw connections
       for (final conn in _connections) {
-        final a = landmarks[conn[0]];
-        final b = landmarks[conn[1]];
+        final a = lms[conn[0]];
+        final b = lms[conn[1]];
         canvas.drawLine(
           Offset((a.x as num) * size.width, (a.y as num) * size.height),
           Offset((b.x as num) * size.width, (b.y as num) * size.height),
@@ -668,17 +542,13 @@ class _LandmarkPainter extends CustomPainter {
         );
       }
 
-      // Draw dots
-      for (int i = 0; i < landmarks.length; i++) {
-        final lm = landmarks[i];
-        final x = (lm.x as num) * size.width;
-        final y = (lm.y as num) * size.height;
-        // Fingertips (4, 8, 12, 16, 20) are white, others teal
+      for (int i = 0; i < lms.length; i++) {
+        final lm = lms[i];
         final isTip = [4, 8, 12, 16, 20].contains(i);
         canvas.drawCircle(
-          Offset(x, y),
+          Offset((lm.x as num) * size.width, (lm.y as num) * size.height),
           isTip ? 5 : 3,
-          isTip ? dotPaintTip : dotPaint,
+          isTip ? tipPaint : dotPaint,
         );
       }
     }

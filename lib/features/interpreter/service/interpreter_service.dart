@@ -9,15 +9,19 @@ class InterpreterService {
 
   bool get isInitialized => _isInitialized;
 
-  // ── Initialize: load model + labels from assets ────────────────────────────
+  // ── Initialize ─────────────────────────────────────────────────────────────
   Future<void> initialize() async {
     try {
-      // Load TFLite model
-      final interpreterOptions = InterpreterOptions()..threads = 2;
-      _interpreter = await Interpreter.fromAsset(
-        'assets/model/sign_model.tflite',
-        options: interpreterOptions,
-      );
+      // Load model bytes from assets
+      final modelData =
+          await rootBundle.load('assets/model/sign_model.tflite');
+      final modelBytes = modelData.buffer.asUint8List();
+
+      // Create interpreter with no delegates — plain CPU, most compatible
+      _interpreter = Interpreter.fromBuffer(modelBytes);
+
+      // Allocate tensors
+      _interpreter!.allocateTensors();
 
       // Load labels
       final labelsData =
@@ -35,31 +39,23 @@ class InterpreterService {
     }
   }
 
-  // ── Run inference on 42 landmark floats ────────────────────────────────────
-  // Input:  21 landmarks flattened → [x0,y0, x1,y1, ... x20,y20] = 42 floats
-  // Output: InterpreterResult with predicted letter and confidence
+  // ── Predict ────────────────────────────────────────────────────────────────
   InterpreterResult predict(List<double> landmarks) {
     if (!_isInitialized || _interpreter == null) {
       return InterpreterResult.noHand();
     }
-
-    if (landmarks.length != 42) {
-      return InterpreterResult.noHand();
-    }
+    if (landmarks.length != 42) return InterpreterResult.noHand();
 
     try {
-      // Input tensor shape [1, 42]
-      final input = [landmarks.map((e) => e.toDouble()).toList()];
+      // Input: [[x0,y0,x1,y1,...,x20,y20]] shape [1, 42]
+      final input = [landmarks];
 
-      // Output tensor shape [1, 27]
-      final output =
-          List.filled(1 * _labels.length, 0.0).reshape([1, _labels.length]);
+      // Output: [[p0, p1, ..., p26]] shape [1, 27]
+      final output = List.generate(1, (_) => List.filled(_labels.length, 0.0));
 
       _interpreter!.run(input, output);
 
-      final probabilities = List<double>.from(output[0] as List);
-
-      // Argmax
+      final probabilities = output[0];
       double maxProb = 0.0;
       int maxIndex = 0;
       for (int i = 0; i < probabilities.length; i++) {
@@ -69,11 +65,8 @@ class InterpreterService {
         }
       }
 
-      final predictedLabel =
-          maxIndex < _labels.length ? _labels[maxIndex] : '?';
-
       return InterpreterResult(
-        letter: predictedLabel,
+        letter: maxIndex < _labels.length ? _labels[maxIndex] : '?',
         confidence: maxProb,
         isHandDetected: true,
       );
@@ -82,43 +75,30 @@ class InterpreterService {
     }
   }
 
-  // ── Normalize landmarks relative to wrist ─────────────────────────────────
-  // Centers around wrist (landmark 0) and scales to [-1, 1]
+  // ── Normalize landmarks ────────────────────────────────────────────────────
   static List<double> normalizeLandmarks(List<dynamic> rawLandmarks) {
-    if (rawLandmarks.isEmpty) return [];
+    if (rawLandmarks.length != 21) return [];
 
-    List<double> xs = [];
-    List<double> ys = [];
+    final xs = rawLandmarks.map((lm) => (lm.x as num).toDouble()).toList();
+    final ys = rawLandmarks.map((lm) => (lm.y as num).toDouble()).toList();
 
-    for (final lm in rawLandmarks) {
-      xs.add((lm.x as num).toDouble());
-      ys.add((lm.y as num).toDouble());
-    }
-
-    // Center around wrist (index 0)
     final wristX = xs[0];
     final wristY = ys[0];
+    final cx = xs.map((x) => x - wristX).toList();
+    final cy = ys.map((y) => y - wristY).toList();
 
-    xs = xs.map((x) => x - wristX).toList();
-    ys = ys.map((y) => y - wristY).toList();
-
-    // Scale to [-1, 1]
-    final allValues = [...xs, ...ys];
-    final maxAbs =
-        allValues.map((v) => v.abs()).reduce((a, b) => a > b ? a : b);
-
+    final all = [...cx, ...cy];
+    final maxAbs = all.map((v) => v.abs()).reduce((a, b) => a > b ? a : b);
     if (maxAbs == 0) return List.filled(42, 0.0);
 
-    xs = xs.map((x) => x / maxAbs).toList();
-    ys = ys.map((y) => y / maxAbs).toList();
+    final sx = cx.map((x) => x / maxAbs).toList();
+    final sy = cy.map((y) => y / maxAbs).toList();
 
-    // Interleave: [x0, y0, x1, y1, ...]
     final result = <double>[];
-    for (int i = 0; i < xs.length; i++) {
-      result.add(xs[i]);
-      result.add(ys[i]);
+    for (int i = 0; i < 21; i++) {
+      result.add(sx[i]);
+      result.add(sy[i]);
     }
-
     return result;
   }
 
