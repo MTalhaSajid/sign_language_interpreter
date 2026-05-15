@@ -9,6 +9,7 @@ import '../../features/settings/view/setting_screen.dart';
 import '../../features/splash/view/splash_screen.dart';
 import '../../features/interpreter/controller/interpreter_controller.dart';
 import '../../features/interpreter/view/interpreter_screen.dart';
+import '../../features/alphabet/view/alphabet_screen.dart';
 import '../../core/di/service_locator.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -53,12 +54,29 @@ GoRouter buildRouter() {
         path: '/settings',
         builder: (context, state) => const SettingScreen(),
       ),
-      // ── Interpreter — fresh controller every visit ──────────────────────
       GoRoute(
         path: '/interpreter',
-        builder: (context, state) => ChangeNotifierProvider<InterpreterController>(
+        builder: (context, state) =>
+            ChangeNotifierProvider<InterpreterController>(
           create: (_) => sl<InterpreterController>(),
           child: const InterpreterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/alphabet',
+        builder: (context, state) => const AlphabetScreen(),
+      ),
+      // TODO: next features
+      GoRoute(
+        path: '/word-to-sign',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Word to Sign — Coming Soon')),
+        ),
+      ),
+      GoRoute(
+        path: '/sign-to-word',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Sign to Word — Coming Soon')),
         ),
       ),
     ],
