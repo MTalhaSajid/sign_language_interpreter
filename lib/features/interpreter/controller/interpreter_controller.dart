@@ -67,26 +67,19 @@ class InterpreterController extends ChangeNotifier {
     try {
       _setState(InterpreterState.initializing);
 
-      // 1. Camera permission
       final status = await Permission.camera.request();
       if (!status.isGranted) throw Exception('Camera permission denied');
 
-      // 2. TFLite model
       await _interpreterService.initialize();
-
-      // 3. TTS
       await _initTts();
 
-      // 4. Hand landmarker — CPU delegate is more stable
       _handLandmarker = HandLandmarkerPlugin.create(
         numHands: 1,
-        minHandDetectionConfidence: 0.6,
+        minHandDetectionConfidence: 0.5,
         delegate: HandLandmarkerDelegate.cpu,
       );
 
-      // 5. Camera
       await _initCamera();
-
       _setState(InterpreterState.ready);
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -101,7 +94,7 @@ class InterpreterController extends ChangeNotifier {
 
     CameraDescription camera = cameras.first;
     for (final c in cameras) {
-      if (c.lensDirection == CameraLensDirection.front) {
+      if (c.lensDirection == CameraLensDirection.back) {
         camera = c;
         break;
       }
@@ -122,17 +115,14 @@ class InterpreterController extends ChangeNotifier {
   Future<void> _processFrame(CameraImage image) async {
     if (_isProcessingFrame || _handLandmarker == null) return;
     if (_state == InterpreterState.error ||
-        _state == InterpreterState.initializing) {
-      return;
-    }
+        _state == InterpreterState.initializing) return;
 
     _isProcessingFrame = true;
 
     try {
-      final hands = _handLandmarker!.detect(
-        image,
-        _cameraController!.description.sensorOrientation,
-      );
+      final sensorOrientation =
+          _cameraController!.description.sensorOrientation;
+      final hands = _handLandmarker!.detect(image, sensorOrientation);
 
       if (hands.isEmpty) {
         _detectedHands = [];
@@ -142,11 +132,13 @@ class InterpreterController extends ChangeNotifier {
       } else {
         _detectedHands = hands;
         final hand = hands.first;
-        final normalized =
-            InterpreterService.normalizeLandmarks(hand.landmarks);
 
-        if (normalized.length == 42) {
-          final result = _interpreterService.predict(normalized);
+        // Extract with coordinate correction (1-y, 1-x)
+        final landmarks =
+            InterpreterService.extractLandmarks(hand.landmarks);
+
+        if (landmarks.length == 42) {
+          final result = _interpreterService.predict(landmarks);
           _currentResult = result;
 
           if (result.isConfident) {
@@ -193,14 +185,13 @@ class InterpreterController extends ChangeNotifier {
         _recognizedText += '$_currentWord ';
         _currentWord = '';
         _confirmedLetters = [];
-        _setState(InterpreterState.confirmed);
         if (_isTtsEnabled) _speakLastWord();
       }
     } else {
       _currentWord += letter;
       _confirmedLetters.add(letter);
-      _setState(InterpreterState.confirmed);
     }
+    _setState(InterpreterState.confirmed);
     notifyListeners();
   }
 
