@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../model/interpreter_result.dart';
 import '../service/interpreter_service.dart';
 
@@ -21,6 +22,10 @@ class InterpreterController extends ChangeNotifier {
   // ── State ──────────────────────────────────────────────────────────────────
   InterpreterState _state = InterpreterState.initializing;
   InterpreterState get state => _state;
+
+  // ── Dominant hand ──────────────────────────────────────────────────────────
+  bool _isRightHand = false; // default: left hand (matches training data)
+  bool get isRightHand => _isRightHand;
 
   // ── Camera ─────────────────────────────────────────────────────────────────
   CameraController? _cameraController;
@@ -67,6 +72,10 @@ class InterpreterController extends ChangeNotifier {
     try {
       _setState(InterpreterState.initializing);
 
+      // Load saved hand preference
+      final prefs = await SharedPreferences.getInstance();
+      _isRightHand = prefs.getBool('dominant_hand_right') ?? false;
+
       final status = await Permission.camera.request();
       if (!status.isGranted) throw Exception('Camera permission denied');
 
@@ -85,6 +94,20 @@ class InterpreterController extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _setState(InterpreterState.error);
     }
+  }
+
+  // ── Toggle dominant hand ───────────────────────────────────────────────────
+  Future<void> toggleDominantHand() async {
+    _isRightHand = !_isRightHand;
+
+    // Persist preference
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dominant_hand_right', _isRightHand);
+
+    // Reset current prediction
+    _currentResult = InterpreterResult.noHand();
+    _resetHoldTimer();
+    notifyListeners();
   }
 
   // ── Camera ─────────────────────────────────────────────────────────────────
@@ -133,9 +156,11 @@ class InterpreterController extends ChangeNotifier {
         _detectedHands = hands;
         final hand = hands.first;
 
-        // Extract with coordinate correction (1-y, 1-x)
-        final landmarks =
-            InterpreterService.extractLandmarks(hand.landmarks);
+        // Single condition: mirror x if right hand selected
+        final landmarks = InterpreterService.extractLandmarks(
+          hand.landmarks,
+          _isRightHand,
+        );
 
         if (landmarks.length == 42) {
           final result = _interpreterService.predict(landmarks);

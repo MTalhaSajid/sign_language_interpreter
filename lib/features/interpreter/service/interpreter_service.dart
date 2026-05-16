@@ -36,6 +36,7 @@ class InterpreterService {
     }
   }
 
+  // ── Run inference ──────────────────────────────────────────────────────────
   InterpreterResult predict(List<double> landmarks) {
     if (!_isInitialized || _interpreter == null) {
       return InterpreterResult.noHand();
@@ -69,19 +70,26 @@ class InterpreterService {
     }
   }
 
-  // RAW - no transform - pass exactly as hand_landmarker gives
-  static List<double> extractLandmarks(List<dynamic> rawLandmarks) {
+  // ── Extract landmarks + apply dominant hand correction ────────────────────
+  // Training data was collected with LEFT hand (Kaggle dataset default)
+  // Right hand = mirror image → flip x axis with new_x = 1 - x
+  static List<double> extractLandmarks(
+      List<dynamic> rawLandmarks, bool isRightHand) {
     if (rawLandmarks.isEmpty || rawLandmarks.length != 21) return [];
 
     final result = <double>[];
     for (final lm in rawLandmarks) {
-      result.add((lm.x as num).toDouble());
-      result.add((lm.y as num).toDouble());
+      double x = (lm.x as num).toDouble();
+      final double y = (lm.y as num).toDouble();
+
+      // Single condition — mirror x for right hand
+      if (isRightHand) x = 1.0 - x;
+
+      result.add(x);
+      result.add(y);
     }
     return result;
   }
-
-  void resetDebug() {}
 
   void dispose() {
     _interpreter?.close();

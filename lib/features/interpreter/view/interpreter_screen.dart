@@ -97,6 +97,52 @@ class _InterpreterScreenState extends State<InterpreterScreen>
             ],
           ),
           const Spacer(),
+
+          // ── Dominant hand toggle ──────────────────────────────────────────
+          GestureDetector(
+            onTap: controller.toggleDominantHand,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: controller.isRightHand
+                    ? AppColors.blue.withOpacity(0.15)
+                    : AppColors.teal.withOpacity(0.15),
+                borderRadius: AppStyles.radiusMd,
+                border: Border.all(
+                  color: controller.isRightHand
+                      ? AppColors.blue
+                      : AppColors.teal,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.back_hand_rounded,
+                    size: 14,
+                    color: controller.isRightHand
+                        ? AppColors.blue
+                        : AppColors.teal,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    controller.isRightHand ? 'Right' : 'Left',
+                    style: AppFonts.bodySmall.copyWith(
+                      color: controller.isRightHand
+                          ? AppColors.blue
+                          : AppColors.teal,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: controller.toggleTts,
             child: Container(
