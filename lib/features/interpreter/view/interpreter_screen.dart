@@ -21,13 +21,51 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
+  bool _cnnHintShown = false;
+
+  void _showCnnHint(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.screen_rotation_rounded,
+                color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Please rotate camera to the left for CNN mode',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0ABFA3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    // Lock orientation based on mode
+    if (controller.isCnnMode) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+    }
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.2)
@@ -41,6 +79,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   @override
   void dispose() {
     _pulseCtrl.dispose();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
 
@@ -50,6 +89,16 @@ class _InterpreterScreenState extends State<InterpreterScreen>
 
     if (controller.state == InterpreterState.confirmed) {
       _pulseCtrl.forward().then((_) => _pulseCtrl.reverse());
+    }
+
+    // Show popup when switching to CNN mode
+    if (controller.isCnnMode && !_cnnHintShown) {
+      _cnnHintShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showCnnHint(context);
+      });
+    } else if (!controller.isCnnMode) {
+      _cnnHintShown = false;
     }
 
     return Scaffold(
@@ -91,12 +140,50 @@ class _InterpreterScreenState extends State<InterpreterScreen>
               Text('Live Interpreter',
                   style: AppFonts.headingSmall
                       .copyWith(color: AppColors.textPrimary)),
-              Text('ASL A–Z + Space',
-                  style: AppFonts.bodySmall
-                      .copyWith(color: AppColors.textSecondary)),
+              Text(
+                controller.isCnnMode
+                    ? 'CNN · Image Model'
+                    : 'FNN · Landmark Model',
+                style: AppFonts.bodySmall
+                    .copyWith(color: AppColors.textSecondary)),
             ],
           ),
           const Spacer(),
+
+          // ── Model toggle FNN/CNN ──────────────────────────────────────────
+          GestureDetector(
+            onTap: controller.toggleModelType,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: controller.isCnnMode
+                    ? const Color(0xFF9B6EFF).withOpacity(0.15)
+                    : AppColors.bgSurface,
+                borderRadius: AppStyles.radiusMd,
+                border: Border.all(
+                  color: controller.isCnnMode
+                      ? const Color(0xFF9B6EFF)
+                      : AppColors.bgBorder,
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  controller.isCnnMode ? 'CNN' : 'FNN',
+                  style: AppFonts.bodySmall.copyWith(
+                    color: controller.isCnnMode
+                        ? const Color(0xFF9B6EFF)
+                        : AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
 
           // ── Dominant hand toggle ──────────────────────────────────────────
           GestureDetector(
@@ -201,11 +288,16 @@ class _InterpreterScreenState extends State<InterpreterScreen>
             else
               _buildLoadingState(),
 
-            // Landmark overlay
-            if (controller.detectedHands.isNotEmpty)
+            // Landmark overlay — FNN only
+            if (!controller.isCnnMode &&
+                controller.detectedHands.isNotEmpty)
               CustomPaint(
                 painter: _LandmarkPainter(controller.detectedHands),
               ),
+
+            // CNN guide box — shows where to place hand
+            if (controller.isCnnMode)
+              CustomPaint(painter: _CnnBoxPainter()),
 
             // Camera frame corners
             CustomPaint(painter: _CameraFramePainter()),
@@ -543,7 +635,39 @@ class _CameraFramePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ── Landmark painter ──────────────────────────────────────────────────────────
+// ── CNN guide box painter ─────────────────────────────────────────────────────
+class _CnnBoxPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Center square crop — matches what CNN processes
+    final s = size.width < size.height ? size.width : size.height;
+    final x1 = (size.width - s) / 2;
+    final y1 = (size.height - s) / 2;
+
+    final paint = Paint()
+      ..color = const Color(0xFF0ABFA3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    canvas.drawRect(Rect.fromLTWH(x1, y1, s, s), paint);
+
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'Place hand here',
+        style: TextStyle(
+            color: Color(0xFF0ABFA3),
+            fontSize: 11,
+            fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(x1, y1 - 18));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
 class _LandmarkPainter extends CustomPainter {
   final List<Hand> hands;
   _LandmarkPainter(this.hands);

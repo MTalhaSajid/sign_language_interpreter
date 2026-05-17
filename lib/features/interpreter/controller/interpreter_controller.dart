@@ -23,6 +23,15 @@ class InterpreterController extends ChangeNotifier {
   InterpreterState _state = InterpreterState.initializing;
   InterpreterState get state => _state;
 
+  // ── CNN rotation ───────────────────────────────────────────────────────────
+  int _cnnRotation = 0; // 0, 90, 180, 270
+  int get cnnRotation => _cnnRotation;
+
+  // ── Model type ─────────────────────────────────────────────────────────────
+  ModelType _modelType = ModelType.fnn;
+  ModelType get modelType => _modelType;
+  bool get isCnnMode => _modelType == ModelType.cnn;
+
   // ── Dominant hand ──────────────────────────────────────────────────────────
   bool _isRightHand = false; // default: left hand (matches training data)
   bool get isRightHand => _isRightHand;
@@ -75,6 +84,10 @@ class InterpreterController extends ChangeNotifier {
       // Load saved hand preference
       final prefs = await SharedPreferences.getInstance();
       _isRightHand = prefs.getBool('dominant_hand_right') ?? false;
+      _modelType = (prefs.getString('model_type') ?? 'fnn') == 'cnn'
+          ? ModelType.cnn
+          : ModelType.fnn;
+      _cnnRotation = prefs.getInt('cnn_rotation') ?? 0;
 
       final status = await Permission.camera.request();
       if (!status.isGranted) throw Exception('Camera permission denied');
@@ -94,6 +107,28 @@ class InterpreterController extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _setState(InterpreterState.error);
     }
+  }
+
+  // ── Set CNN rotation ───────────────────────────────────────────────────────
+  Future<void> setCnnRotation(int angle) async {
+    _cnnRotation = angle;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('cnn_rotation', angle);
+    _currentResult = InterpreterResult.noHand();
+    notifyListeners();
+  }
+
+  // ── Toggle model type ──────────────────────────────────────────────────────
+  Future<void> toggleModelType() async {
+    _modelType =
+        _modelType == ModelType.fnn ? ModelType.cnn : ModelType.fnn;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'model_type', _modelType == ModelType.cnn ? 'cnn' : 'fnn');
+    _currentResult = InterpreterResult.noHand();
+    _detectedHands = [];
+    _resetHoldTimer();
+    notifyListeners();
   }
 
   // ── Toggle dominant hand ───────────────────────────────────────────────────
@@ -147,31 +182,45 @@ class InterpreterController extends ChangeNotifier {
           _cameraController!.description.sensorOrientation;
       final hands = _handLandmarker!.detect(image, sensorOrientation);
 
-      if (hands.isEmpty) {
-        _detectedHands = [];
-        _currentResult = InterpreterResult.noHand();
-        _resetHoldTimer();
-        _setState(InterpreterState.ready);
+      if (_modelType == ModelType.fnn) {
+        // ── FNN — exactly as working version ────────────────────────────────
+        if (hands.isEmpty) {
+          _detectedHands = [];
+          _currentResult = InterpreterResult.noHand();
+          _resetHoldTimer();
+          _setState(InterpreterState.ready);
+        } else {
+          _detectedHands = hands;
+          final landmarks = InterpreterService.extractLandmarks(
+            hands.first.landmarks, _isRightHand);
+          if (landmarks.length == 42) {
+            final result = _interpreterService.predict(landmarks);
+            _currentResult = result;
+            if (result.isConfident) {
+              _setState(InterpreterState.detecting);
+              _checkHoldConfirmation(result.letter);
+            } else {
+              _resetHoldTimer();
+            }
+          }
+        }
       } else {
+        // ── CNN — fixed box crop, no orientation change ──────────────────────
         _detectedHands = hands;
-        final hand = hands.first;
-
-        // Single condition: mirror x if right hand selected
-        final landmarks = InterpreterService.extractLandmarks(
-          hand.landmarks,
-          _isRightHand,
-        );
-
-        if (landmarks.length == 42) {
-          final result = _interpreterService.predict(landmarks);
+        final result = _interpreterService.predictCNN(
+            image, sensorOrientation, _cnnRotation);
+        if (result.isHandDetected) {
           _currentResult = result;
-
           if (result.isConfident) {
             _setState(InterpreterState.detecting);
             _checkHoldConfirmation(result.letter);
           } else {
             _resetHoldTimer();
           }
+        } else if (hands.isEmpty) {
+          _currentResult = InterpreterResult.noHand();
+          _resetHoldTimer();
+          _setState(InterpreterState.ready);
         }
       }
     } catch (e) {
