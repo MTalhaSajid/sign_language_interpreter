@@ -26,12 +26,21 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('SCREEN: initState channelId=${widget.channelId} '
+        'isIncoming=${widget.isIncoming}');
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final controller = context.read<CallController>();
+
+      // Step 1: initialize everything
       await controller.initialize();
-      if (widget.isIncoming) {
+
+      // Step 2: join call based on role
+      if (widget.isIncoming && widget.channelId.isNotEmpty) {
+        debugPrint('SCREEN: Accepting call on ${widget.channelId}');
         await controller.acceptCall(widget.channelId);
       } else {
+        debugPrint('SCREEN: Starting new call');
         await controller.startCall();
       }
     });
@@ -54,7 +63,7 @@ class _CallScreenState extends State<CallScreen> {
           // ── Remote video fullscreen ────────────────────────────────────────
           _buildRemoteVideo(controller),
 
-          // ── Their caption (top) ────────────────────────────────────────────
+          // ── Their caption ──────────────────────────────────────────────────
           if (controller.remoteCaption.isNotEmpty)
             Positioned(
               top: MediaQuery.of(context).padding.top + 60,
@@ -93,17 +102,15 @@ class _CallScreenState extends State<CallScreen> {
             ),
           ),
 
-          // ── Local video PiP (bottom right) ────────────────────────────────
+          // ── Local PiP ─────────────────────────────────────────────────────
           Positioned(
-            bottom: 170,
-            right: 16,
+            bottom: 170, right: 16,
             child: _buildLocalPiP(controller),
           ),
 
-          // ── My caption (above controls) ────────────────────────────────────
+          // ── My caption ────────────────────────────────────────────────────
           Positioned(
-            bottom: 110,
-            left: 16, right: 120,
+            bottom: 110, left: 16, right: 120,
             child: _buildCaptionBubble(
               label: 'My signs',
               text: controller.myCaption.isEmpty
@@ -125,11 +132,10 @@ class _CallScreenState extends State<CallScreen> {
             child: _buildControls(controller),
           ),
 
-          // ── Calling / incoming overlay ─────────────────────────────────────
+          // ── Connecting overlay ─────────────────────────────────────────────
           if (controller.callState == CallState.calling ||
-              controller.callState == CallState.incoming ||
               controller.callState == CallState.idle)
-            _buildOverlay(controller),
+            _buildConnectingOverlay(controller),
         ],
       ),
     );
@@ -139,11 +145,9 @@ class _CallScreenState extends State<CallScreen> {
   Widget _buildRemoteVideo(CallController controller) {
     final engine = controller.callService.engine;
     final remoteUid = controller.remoteUid;
-    final channelId = controller.channelId;
+    final ch = controller.channelId;
 
-    if (engine == null ||
-        remoteUid == null ||
-        channelId == null) {
+    if (engine == null || remoteUid == null || ch == null) {
       return Container(
         color: const Color(0xFF0D1B2A),
         child: const Center(
@@ -165,8 +169,9 @@ class _CallScreenState extends State<CallScreen> {
       child: AgoraVideoView(
         controller: VideoViewController.remote(
           rtcEngine: engine,
-          canvas: VideoCanvas(uid: remoteUid),
-          connection: RtcConnection(channelId: channelId),
+          // uid=0 renders the first available remote user in 1-to-1 calls
+          canvas: const VideoCanvas(uid: 0),
+          connection: RtcConnection(channelId: ch),
         ),
       ),
     );
@@ -175,7 +180,6 @@ class _CallScreenState extends State<CallScreen> {
   // ── Local PiP ──────────────────────────────────────────────────────────────
   Widget _buildLocalPiP(CallController controller) {
     final engine = controller.callService.engine;
-
     return GestureDetector(
       onTap: controller.switchCamera,
       child: ClipRRect(
@@ -207,8 +211,7 @@ class _CallScreenState extends State<CallScreen> {
     bool dimmed = false,
   }) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: dimmed
             ? Colors.black.withOpacity(0.3)
@@ -230,8 +233,7 @@ class _CallScreenState extends State<CallScreen> {
                 const SizedBox(height: 2),
                 Text(text,
                     style: TextStyle(
-                        color:
-                            dimmed ? Colors.white38 : Colors.white,
+                        color: dimmed ? Colors.white38 : Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w500)),
               ],
@@ -250,7 +252,63 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
-  // ── Controls bar ───────────────────────────────────────────────────────────
+  // ── Connecting overlay ─────────────────────────────────────────────────────
+  Widget _buildConnectingOverlay(CallController controller) {
+    return Container(
+      color: Colors.black.withOpacity(0.8),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 56, height: 56,
+              child: CircularProgressIndicator(
+                  color: AppColors.teal, strokeWidth: 2),
+            ),
+            const SizedBox(height: 24),
+            const Text('Connecting...',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(
+              controller.channelId ?? '',
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: controller.endCall,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                      color: Colors.red.withOpacity(0.5)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.call_end_rounded,
+                        color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Text('Cancel',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Controls ───────────────────────────────────────────────────────────────
   Widget _buildControls(CallController controller) {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -261,7 +319,7 @@ class _CallScreenState extends State<CallScreen> {
           end: Alignment.topCenter,
           colors: [
             Colors.black.withOpacity(0.95),
-            Colors.transparent
+            Colors.transparent,
           ],
         ),
       ),
@@ -276,7 +334,7 @@ class _CallScreenState extends State<CallScreen> {
             active: controller.isMuted,
             onTap: controller.toggleMute,
           ),
-          // End call — bigger red button
+          // End call
           GestureDetector(
             onTap: controller.endCall,
             child: Column(
@@ -349,13 +407,10 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
-  // ── Status badge ───────────────────────────────────────────────────────────
   Widget _statusBadge(CallController controller) {
-    final isConnected =
-        controller.callState == CallState.connected;
+    final isConnected = controller.callState == CallState.connected;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
@@ -367,15 +422,13 @@ class _CallScreenState extends State<CallScreen> {
             width: 7, height: 7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color:
-                  isConnected ? AppColors.teal : Colors.orange,
+              color: isConnected ? AppColors.teal : Colors.orange,
             ),
           ),
           const SizedBox(width: 6),
           Text(
             isConnected ? 'Connected' : 'Connecting...',
-            style: const TextStyle(
-                color: Colors.white, fontSize: 12),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),
@@ -396,80 +449,6 @@ class _CallScreenState extends State<CallScreen> {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color, size: 18),
-      ),
-    );
-  }
-
-  // ── Overlay (calling / incoming) ───────────────────────────────────────────
-  Widget _buildOverlay(CallController controller) {
-    return Container(
-      color: Colors.black.withOpacity(0.75),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 60, height: 60,
-              child: CircularProgressIndicator(
-                  color: AppColors.teal, strokeWidth: 2),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              controller.callState == CallState.calling
-                  ? 'Calling partner...'
-                  : controller.callState == CallState.incoming
-                      ? 'Incoming call'
-                      : 'Initializing...',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600),
-            ),
-            if (widget.isIncoming) ...[
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _overlayBtn(
-                    Icons.call_end_rounded,
-                    Colors.red,
-                    'Decline',
-                    controller.endCall,
-                  ),
-                  const SizedBox(width: 48),
-                  _overlayBtn(
-                    Icons.call_rounded,
-                    AppColors.teal,
-                    'Accept',
-                    () => controller.acceptCall(widget.channelId),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _overlayBtn(
-      IconData icon, Color color, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64, height: 64,
-            decoration:
-                BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 12)),
-        ],
       ),
     );
   }

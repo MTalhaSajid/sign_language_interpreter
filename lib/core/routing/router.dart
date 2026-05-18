@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:sign_language_interpreter/features/interpreter/service/interpreter_service.dart';
 import 'package:sign_language_interpreter/features/video_call/controller/call_controller.dart';
 import 'package:sign_language_interpreter/features/video_call/service/call_service.dart';
 import 'package:sign_language_interpreter/features/video_call/view/call_screen.dart';
@@ -87,12 +86,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/video-call',
         builder: (context, state) => ChangeNotifierProvider(
-          create: (_) => CallController(CallService(), InterpreterService()),
+          create: (_) => CallController(CallService()),
           child: const CallScreen(channelId: '', isIncoming: false),
         ),
       ),
-
-      // Single /call/:channelId route — handles both incoming and outgoing
       GoRoute(
         path: '/call/:channelId',
         builder: (context, state) {
@@ -100,8 +97,7 @@ GoRouter buildRouter() {
           final isIncoming =
               state.uri.queryParameters['incoming'] == 'true';
           return ChangeNotifierProvider(
-            create: (_) =>
-                CallController(CallService(), InterpreterService()),
+            create: (_) => CallController(CallService()),
             child: CallScreen(
               channelId: channelId,
               isIncoming: isIncoming,

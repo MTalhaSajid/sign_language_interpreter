@@ -54,6 +54,6 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<ThemeProvider>(
     () => ThemeProvider(),
   );
-  sl.registerFactory(() => CallController(sl<CallService>(), sl<InterpreterService>()));
+  sl.registerFactory(() => CallController(sl<CallService>()));
   sl.registerLazySingleton(() => CallService());
 }
