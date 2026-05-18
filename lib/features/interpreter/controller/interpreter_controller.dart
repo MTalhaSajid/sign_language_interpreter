@@ -23,8 +23,8 @@ class InterpreterController extends ChangeNotifier {
   InterpreterState _state = InterpreterState.initializing;
   InterpreterState get state => _state;
 
-  // ── CNN rotation ───────────────────────────────────────────────────────────
-  int _cnnRotation = 0; // 0, 90, 180, 270
+  // ── CNN rotation — hardcoded 270° (confirmed working) ─────────────────────
+  final int _cnnRotation = 270;
   int get cnnRotation => _cnnRotation;
 
   // ── Model type ─────────────────────────────────────────────────────────────
@@ -87,7 +87,6 @@ class InterpreterController extends ChangeNotifier {
       _modelType = (prefs.getString('model_type') ?? 'fnn') == 'cnn'
           ? ModelType.cnn
           : ModelType.fnn;
-      _cnnRotation = prefs.getInt('cnn_rotation') ?? 0;
 
       final status = await Permission.camera.request();
       if (!status.isGranted) throw Exception('Camera permission denied');
@@ -107,15 +106,6 @@ class InterpreterController extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _setState(InterpreterState.error);
     }
-  }
-
-  // ── Set CNN rotation ───────────────────────────────────────────────────────
-  Future<void> setCnnRotation(int angle) async {
-    _cnnRotation = angle;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('cnn_rotation', angle);
-    _currentResult = InterpreterResult.noHand();
-    notifyListeners();
   }
 
   // ── Toggle model type ──────────────────────────────────────────────────────
@@ -162,6 +152,7 @@ class InterpreterController extends ChangeNotifier {
       camera,
       ResolutionPreset.medium,
       enableAudio: false,
+      // BGRA is faster for CNN (no YUV conversion), YUV needed for hand_landmarker
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
 

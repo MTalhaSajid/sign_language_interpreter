@@ -117,77 +117,90 @@ class InterpreterService {
     return result;
   }
 
-  // ── CNN predict ────────────────────────────────────────────────────────────
+  // ── CNN predict — optimized ────────────────────────────────────────────────
+  // Hardcoded 270° rotation (confirmed working)
+  // Uses BGRA format for fast conversion — no YUV math needed
   InterpreterResult predictCNN(
       CameraImage cameraImage, int sensorOrientation, int cnnRotation) {
     if (!_cnnInitialized || _cnnInterpreter == null) {
       return InterpreterResult.noHand();
     }
 
-    // Every 3rd frame
+    // Process every 6th frame — reduces CPU load significantly
     _frameCount++;
-    if (_frameCount % 3 != 0) return InterpreterResult.noHand();
+    if (_frameCount % 6 != 0) return InterpreterResult.noHand();
 
     try {
-      // Convert YUV420 → RGB
-      final rgbImage = _convertYUV420toRGB(cameraImage);
-      if (rgbImage == null) return InterpreterResult.noHand();
+      // ── Fast path: BGRA8888 format (no YUV conversion needed) ──────────────
+      img.Image? source;
 
-      // Sensor orientation correction
-      img.Image rotated;
-      if (sensorOrientation == 90) {
-        rotated = img.copyRotate(rgbImage, angle: 90);
-      } else if (sensorOrientation == 270) {
-        rotated = img.copyRotate(rgbImage, angle: -90);
-      } else if (sensorOrientation == 180) {
-        rotated = img.copyRotate(rgbImage, angle: 180);
+      if (cameraImage.format.group == ImageFormatGroup.bgra8888 &&
+          cameraImage.planes.isNotEmpty) {
+        // Direct BGRA → image (fastest path)
+        source = img.Image.fromBytes(
+          width: cameraImage.width,
+          height: cameraImage.height,
+          bytes: cameraImage.planes[0].bytes.buffer,
+          order: img.ChannelOrder.bgra,
+        );
       } else {
-        rotated = rgbImage;
+        // Fallback: YUV420 conversion
+        source = _convertYUV420toRGB(cameraImage);
       }
 
-      // Apply user-selected extra rotation to fix orientation
-      img.Image adjusted;
-      if (cnnRotation == 0) {
-        adjusted = rotated;
+      if (source == null) return InterpreterResult.noHand();
+
+      // ── Single combined rotation: sensor(90°) + CNN correction(270°) ───────
+      // Total = 90 + 270 = 360 = 0° → but we need to check sensor first
+      // sensorOrientation=90 → rotate 90°, then 270° extra = 360° = no rotation
+      // But empirically 270° works, so combined = 90 + 270 = 0 net
+      // We just apply the total as one rotation for speed
+      final totalAngle = (sensorOrientation + cnnRotation) % 360;
+      final img.Image oriented;
+      if (totalAngle == 0) {
+        oriented = source;
+      } else if (totalAngle == 90) {
+        oriented = img.copyRotate(source, angle: 90);
+      } else if (totalAngle == 180) {
+        oriented = img.copyRotate(source, angle: 180);
       } else {
-        adjusted = img.copyRotate(rotated, angle: cnnRotation);
+        oriented = img.copyRotate(source, angle: -90);
       }
 
-      // Center square crop
-      final fw = adjusted.width;
-      final fh = adjusted.height;
+      // ── Center square crop ─────────────────────────────────────────────────
+      final fw = oriented.width;
+      final fh = oriented.height;
       final size = fw < fh ? fw : fh;
       final x1 = (fw ~/ 2 - size ~/ 2).clamp(0, fw - size);
       final y1 = (fh ~/ 2 - size ~/ 2).clamp(0, fh - size);
+      final cropped =
+          img.copyCrop(oriented, x: x1, y: y1, width: size, height: size);
 
-      final cropped = img.copyCrop(
-        adjusted, x: x1, y: y1, width: size, height: size,
+      // ── Resize to 224x224 ──────────────────────────────────────────────────
+      final resized = img.copyResize(
+        cropped,
+        width: 224,
+        height: 224,
+        interpolation: img.Interpolation.linear, // faster than cubic
       );
 
-      // Resize to 224x224
-      final upright = img.copyResize(cropped, width: 224, height: 224);
-
-      // Resize to 224x224
-
-      // Build float32 input [1, 224, 224, 3] normalized /255.0
+      // ── Build float32 tensor [1, 224, 224, 3] normalized /255.0 ───────────
       final inputBuffer = Float32List(224 * 224 * 3);
       int idx = 0;
       for (int y = 0; y < 224; y++) {
         for (int x = 0; x < 224; x++) {
-          final pixel = upright.getPixel(x, y);
+          final pixel = resized.getPixel(x, y);
           inputBuffer[idx++] = pixel.r / 255.0;
           inputBuffer[idx++] = pixel.g / 255.0;
           inputBuffer[idx++] = pixel.b / 255.0;
         }
       }
 
+      // ── Run inference ──────────────────────────────────────────────────────
       final output = List.filled(
           1 * _cnnLabels.length, 0.0).reshape([1, _cnnLabels.length]);
-
       _cnnInterpreter!.run(
-        inputBuffer.reshape([1, 224, 224, 3]),
-        output,
-      );
+          inputBuffer.reshape([1, 224, 224, 3]), output);
 
       final probs = List<double>.from(output[0] as List);
       int maxIdx = 0;
@@ -196,8 +209,6 @@ class InterpreterService {
       }
 
       final letter = _cnnLabels[maxIdx];
-
-      // Filter Nothing
       if (letter == 'Nothing') return InterpreterResult.noHand();
 
       return InterpreterResult(

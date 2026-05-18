@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:sign_language_interpreter/features/video_call/controller/call_controller.dart';
+import 'package:sign_language_interpreter/features/video_call/service/call_service.dart';
 import '../network/api_client.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/dialog_service.dart';
@@ -52,4 +54,6 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<ThemeProvider>(
     () => ThemeProvider(),
   );
+  sl.registerFactory(() => CallController(sl<CallService>(), sl<InterpreterService>()));
+  sl.registerLazySingleton(() => CallService());
 }

@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'services/connectivity_service.dart';
 import 'services/dialog_service.dart';
 import 'services/local_storage_service.dart';
+import 'features/video_call/view/incoming_call_listener.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,28 +71,30 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
-        ChangeNotifierProvider<AuthController>.value(
-            value: sl<AuthController>()),
-        ChangeNotifierProvider<HomeController>.value(
-            value: sl<HomeController>()),
-        ChangeNotifierProvider<SettingsController>.value(
-            value: sl<SettingsController>()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          return MaterialApp.router(
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ThemeProvider>.value(value: sl<ThemeProvider>()),
+      ChangeNotifierProvider<AuthController>.value(
+          value: sl<AuthController>()),
+      ChangeNotifierProvider<HomeController>.value(
+          value: sl<HomeController>()),
+      ChangeNotifierProvider<SettingsController>.value(
+          value: sl<SettingsController>()),
+    ],
+    child: Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return IncomingCallListener(
+          child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             routerConfig: _router,
             scaffoldMessengerKey: DialogService.messengerKey,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 }

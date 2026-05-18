@@ -178,6 +178,18 @@ class HomeScreen extends StatelessWidget {
                         accentColor: Color(0xFF9B6EFF),
                         onTap: () => context.go('/alphabet'),
                       ),
+                      _FeatureCard(
+                        emoji: '📹',
+                        title: 'Video Call',
+                        subtitle: 'Sign language video call',
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1A2A1A), Color(0xFF0F1A0F)],
+                        ),
+                        accentColor: Color(0xFF4CAF50),
+                        onTap: () => context.go('/video-call'),
+                      ),
                     ]),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(

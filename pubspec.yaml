@@ -50,6 +50,9 @@ dev_dependencies:
   build_runner: ^2.4.15
   flutter_native_splash: ^2.4.5
   image: ^4.1.7
+  agora_rtc_engine: ^6.5.3
+  cloud_firestore: ^5.6.9
+  
 
 flutter_native_splash:
   color: "#080E1C"

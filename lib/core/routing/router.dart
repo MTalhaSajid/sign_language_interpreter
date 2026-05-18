@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_language_interpreter/features/interpreter/service/interpreter_service.dart';
+import 'package:sign_language_interpreter/features/video_call/controller/call_controller.dart';
+import 'package:sign_language_interpreter/features/video_call/service/call_service.dart';
+import 'package:sign_language_interpreter/features/video_call/view/call_screen.dart';
 import '../../features/auth/controller/auth_controller.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/auth/view/register_screen.dart';
@@ -66,7 +70,6 @@ GoRouter buildRouter() {
         path: '/alphabet',
         builder: (context, state) => const AlphabetScreen(),
       ),
-      // TODO: next features
       GoRoute(
         path: '/word-to-sign',
         builder: (context, state) => const Scaffold(
@@ -78,6 +81,33 @@ GoRouter buildRouter() {
         builder: (context, state) => const Scaffold(
           body: Center(child: Text('Sign to Word — Coming Soon')),
         ),
+      ),
+
+      // ── Video call routes ──────────────────────────────────────────────────
+      GoRoute(
+        path: '/video-call',
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => CallController(CallService(), InterpreterService()),
+          child: const CallScreen(channelId: '', isIncoming: false),
+        ),
+      ),
+
+      // Single /call/:channelId route — handles both incoming and outgoing
+      GoRoute(
+        path: '/call/:channelId',
+        builder: (context, state) {
+          final channelId = state.pathParameters['channelId']!;
+          final isIncoming =
+              state.uri.queryParameters['incoming'] == 'true';
+          return ChangeNotifierProvider(
+            create: (_) =>
+                CallController(CallService(), InterpreterService()),
+            child: CallScreen(
+              channelId: channelId,
+              isIncoming: isIncoming,
+            ),
+          );
+        },
       ),
     ],
   );

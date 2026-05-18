@@ -21,20 +21,24 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
-  bool _cnnHintShown = false;
+  void _showHint(BuildContext context) {
+    final controller = context.read<InterpreterController>();
+    final message = controller.isCnnMode
+        ? 'Please rotate camera to the left'
+        : 'Show your hand clearly in front of the camera';
 
-  void _showCnnHint(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.screen_rotation_rounded,
+            const Icon(Icons.info_outline_rounded,
                 color: Colors.white, size: 18),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Please rotate camera to the left for CNN mode',
-                style: TextStyle(
+                message,
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w500),
@@ -55,17 +59,7 @@ class _InterpreterScreenState extends State<InterpreterScreen>
   @override
   void initState() {
     super.initState();
-    // Lock orientation based on mode
-    if (controller.isCnnMode) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-    }
+
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.2)
@@ -73,6 +67,8 @@ class _InterpreterScreenState extends State<InterpreterScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InterpreterController>().initialize();
+      // Always show hint every time screen opens
+      _showHint(context);
     });
   }
 
@@ -89,16 +85,6 @@ class _InterpreterScreenState extends State<InterpreterScreen>
 
     if (controller.state == InterpreterState.confirmed) {
       _pulseCtrl.forward().then((_) => _pulseCtrl.reverse());
-    }
-
-    // Show popup when switching to CNN mode
-    if (controller.isCnnMode && !_cnnHintShown) {
-      _cnnHintShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showCnnHint(context);
-      });
-    } else if (!controller.isCnnMode) {
-      _cnnHintShown = false;
     }
 
     return Scaffold(
@@ -639,7 +625,6 @@ class _CameraFramePainter extends CustomPainter {
 class _CnnBoxPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Center square crop — matches what CNN processes
     final s = size.width < size.height ? size.width : size.height;
     final x1 = (size.width - s) / 2;
     final y1 = (size.height - s) / 2;
@@ -668,6 +653,7 @@ class _CnnBoxPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
+
 class _LandmarkPainter extends CustomPainter {
   final List<Hand> hands;
   _LandmarkPainter(this.hands);
