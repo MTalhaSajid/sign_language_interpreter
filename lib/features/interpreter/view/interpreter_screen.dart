@@ -276,9 +276,17 @@ class _InterpreterScreenState extends State<InterpreterScreen>
 
             // Landmark overlay — FNN only
             if (!controller.isCnnMode &&
-                controller.detectedHands.isNotEmpty)
+                controller.detectedHands.isNotEmpty &&
+                controller.isCameraReady)
               CustomPaint(
-                painter: _LandmarkPainter(controller.detectedHands),
+                painter: _LandmarkPainter(
+                  controller.detectedHands,
+                  sensorOrientation: controller
+                      .cameraController!.description.sensorOrientation,
+                  isFrontCamera: controller
+                          .cameraController!.description.lensDirection ==
+                      CameraLensDirection.front,
+                ),
               ),
 
             // CNN guide box — shows where to place hand
@@ -656,7 +664,14 @@ class _CnnBoxPainter extends CustomPainter {
 
 class _LandmarkPainter extends CustomPainter {
   final List<Hand> hands;
-  _LandmarkPainter(this.hands);
+  final int sensorOrientation;
+  final bool isFrontCamera;
+
+  _LandmarkPainter(
+    this.hands, {
+    required this.sensorOrientation,
+    required this.isFrontCamera,
+  });
 
   static const _connections = [
     [0,1],[1,2],[2,3],[3,4],
@@ -666,6 +681,38 @@ class _LandmarkPainter extends CustomPainter {
     [0,17],[17,18],[18,19],[19,20],
     [5,9],[9,13],[13,17],
   ];
+
+  /// Map a landmark from the raw camera-sensor coordinate space (normalized
+  /// 0–1, landscape on most Android devices) into the upright Flutter canvas
+  /// coordinate space so it lines up with the rotated `CameraPreview`.
+  /// Front-facing cameras are additionally mirrored horizontally to match the
+  /// preview's natural selfie mirroring.
+  Offset _project(num x, num y, Size size) {
+    final nx = x.toDouble();
+    final ny = y.toDouble();
+    double rx;
+    double ry;
+    switch (sensorOrientation) {
+      case 90:
+        rx = 1 - ny;
+        ry = nx;
+        break;
+      case 180:
+        rx = 1 - nx;
+        ry = 1 - ny;
+        break;
+      case 270:
+        rx = ny;
+        ry = 1 - nx;
+        break;
+      default: // 0
+        rx = nx;
+        ry = ny;
+        break;
+    }
+    if (isFrontCamera) rx = 1 - rx;
+    return Offset(rx * size.width, ry * size.height);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -692,8 +739,8 @@ class _LandmarkPainter extends CustomPainter {
         final a = lms[conn[0]];
         final b = lms[conn[1]];
         canvas.drawLine(
-          Offset((a.x as num) * size.width, (a.y as num) * size.height),
-          Offset((b.x as num) * size.width, (b.y as num) * size.height),
+          _project(a.x as num, a.y as num, size),
+          _project(b.x as num, b.y as num, size),
           linePaint,
         );
       }
@@ -702,7 +749,7 @@ class _LandmarkPainter extends CustomPainter {
         final lm = lms[i];
         final isTip = [4, 8, 12, 16, 20].contains(i);
         canvas.drawCircle(
-          Offset((lm.x as num) * size.width, (lm.y as num) * size.height),
+          _project(lm.x as num, lm.y as num, size),
           isTip ? 5 : 3,
           isTip ? tipPaint : dotPaint,
         );
@@ -711,5 +758,8 @@ class _LandmarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LandmarkPainter old) => true;
+  bool shouldRepaint(covariant _LandmarkPainter old) =>
+      old.hands != hands ||
+      old.sensorOrientation != sensorOrientation ||
+      old.isFrontCamera != isFrontCamera;
 }

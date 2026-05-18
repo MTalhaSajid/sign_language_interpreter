@@ -64,3 +64,4 @@ flutter:
     - assets/images/
     - assets/model/
     - assets/model/sign_cnn_model.tflite
+    - assets/model/word_cnn_model.tflite

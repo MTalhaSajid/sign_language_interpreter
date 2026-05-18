@@ -105,7 +105,7 @@ class InterpreterService {
   static List<double> extractLandmarks(
       List<dynamic> rawLandmarks, bool isRightHand) {
     if (rawLandmarks.isEmpty || rawLandmarks.length != 21) return [];
-
+  
     final result = <double>[];
     for (final lm in rawLandmarks) {
       double x = (lm.x as num).toDouble();

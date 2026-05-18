@@ -171,9 +171,14 @@ class CallService {
 
   // ── Start call ─────────────────────────────────────────────────────────────
   Future<String> startCall() async {
+    final partnerEmail = _getPartnerEmail(_myEmail);
+
+    // Collapse any pre-existing 'calling' docs from this caller so we never
+    // leave duplicate outgoing-call docs in the collection.
+    await _endStaleOutgoingCalls();
+
     final channelId =
         'signtalk_${DateTime.now().millisecondsSinceEpoch}';
-    final partnerEmail = _getPartnerEmail(_myEmail);
 
     debugPrint('AGORA 📞 Creating call: $channelId → $partnerEmail');
 
@@ -188,12 +193,26 @@ class CallService {
     return channelId;
   }
 
+  Future<void> _endStaleOutgoingCalls() async {
+    try {
+      final snap = await _firestore
+          .collection('calls')
+          .where('callerEmail', isEqualTo: _myEmail)
+          .where('status', isEqualTo: 'calling')
+          .get();
+      for (final d in snap.docs) {
+        await d.reference.update({'status': 'ended'});
+      }
+    } catch (e) {
+      debugPrint('CALL_SERVICE: stale-outgoing cleanup failed: $e');
+    }
+  }
+
   // ── Accept call ────────────────────────────────────────────────────────────
+  // Status flip to 'connected' is done by the incoming-call dialog before
+  // navigation — this is now a no-op kept for callers that still invoke it.
   Future<void> acceptCall(String channelId) async {
-    debugPrint('AGORA 📞 Accepting: $channelId');
-    await _firestore.collection('calls').doc(channelId).update({
-      'status': 'connected',
-    });
+    debugPrint('AGORA 📞 Accepting: $channelId (status update handled by dialog)');
   }
 
   // ── Decline call ───────────────────────────────────────────────────────────

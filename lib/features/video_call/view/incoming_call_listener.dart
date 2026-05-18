@@ -34,6 +34,8 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
     });
   }
 
+  static const _staleCallThreshold = Duration(seconds: 30);
+
   void _listenForCalls(String myEmail) {
     debugPrint('CALL_LISTENER: Listening for calls to: $myEmail');
 
@@ -46,17 +48,35 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
       debugPrint('CALL_LISTENER: Got ${snapshot.docs.length} docs');
 
       if (snapshot.docs.isEmpty) return;
+
+      final now = DateTime.now();
+      final fresh = <QueryDocumentSnapshot>[];
+
+      for (final d in snapshot.docs) {
+        final ts = d['createdAt'] as Timestamp?;
+        // Skip docs with no server timestamp yet — they'll arrive on the next snapshot.
+        if (ts == null) continue;
+
+        final age = now.difference(ts.toDate());
+        if (age > _staleCallThreshold) {
+          // Stale leftover from a previous session — auto-end it.
+          debugPrint('CALL_LISTENER: Ending stale doc ${d.id} (age ${age.inSeconds}s)');
+          d.reference.update({'status': 'ended'}).catchError((_) {});
+          continue;
+        }
+        fresh.add(d);
+      }
+
+      if (fresh.isEmpty) return;
       if (_dialogShowing) return;
 
-      final docs = snapshot.docs.toList();
-      docs.sort((a, b) {
-        final aTime = a['createdAt'] as Timestamp?;
-        final bTime = b['createdAt'] as Timestamp?;
-        if (aTime == null || bTime == null) return 0;
+      fresh.sort((a, b) {
+        final aTime = a['createdAt'] as Timestamp;
+        final bTime = b['createdAt'] as Timestamp;
         return bTime.compareTo(aTime);
       });
 
-      final doc = docs.first;
+      final doc = fresh.first;
       final channelId = doc['channelId'] as String;
       final callerEmail = doc['callerEmail'] as String;
 
@@ -151,10 +171,20 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       _dialogShowing = false;
                       Navigator.of(dialogCtx).pop();
-                      ctx.go('/call/$channelId?incoming=true');
+                      // Mark connected BEFORE navigating so the caller side
+                      // sees the transition immediately and no other listener
+                      // can re-trigger this doc as 'calling'.
+                      await FirebaseFirestore.instance
+                          .collection('calls')
+                          .doc(channelId)
+                          .update({'status': 'connected'}).catchError((_) {});
+                      final navCtx = navigatorKey.currentContext;
+                      if (navCtx != null) {
+                        navCtx.go('/call/$channelId?incoming=true');
+                      }
                     },
                     child: Container(
                       height: 56,
