@@ -31,7 +31,7 @@ class _SignToWordScreenState extends State<SignToWordScreen> {
   bool _modelReady = false;
 
   static const _labels = [
-    'Hello', 'Help', 'ILikeIt', 'Please', 'Sorry', 'Yes'
+    'Hello', 'Help', 'I Love You', 'Please', 'Sorry', 'Yes'
   ];
 
   // ── Prediction ─────────────────────────────────────────────────────────────
@@ -534,7 +534,7 @@ class _SignToWordScreenState extends State<SignToWordScreen> {
                     ),
                   ]),
                 ] else
-                  Text('Show: Hello, Help, ILikeIt, Please, Sorry, Yes',
+                  Text('Show: Hello, Help, I Love You, Please, Sorry, Yes',
                       style: AppFonts.bodySmall
                           .copyWith(color: AppColors.textSecondary)),
               ],

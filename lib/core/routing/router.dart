@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_language_interpreter/features/sign_to_word/view/sign_to_word_screen.dart';
 import 'package:sign_language_interpreter/features/video_call/controller/call_controller.dart';
 import 'package:sign_language_interpreter/features/video_call/service/call_service.dart';
 import 'package:sign_language_interpreter/features/video_call/view/call_screen.dart';
@@ -76,9 +77,7 @@ GoRouter buildRouter() {
       ),
       GoRoute(
         path: '/sign-to-word',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Sign to Word — Coming Soon')),
-        ),
+        builder: (context, state) => const SignToWordScreen()
       ),
 
       // ── Video call routes ──────────────────────────────────────────────────

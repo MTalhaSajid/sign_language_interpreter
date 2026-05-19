@@ -186,7 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
             const SizedBox(height: 6),
             const Text(
-              'SIGN LANGUAGE · INTERPRETED',
+              'SIGN LANGUAGE · INTERPRETER',
               style: TextStyle(
                 fontSize: 10,
                 color: _mutedText,
