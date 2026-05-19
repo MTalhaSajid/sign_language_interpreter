@@ -8,9 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_fonts.dart';
-import '../../../core/theme/app_styles.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_fonts.dart';
+import '../../../../core/theme/app_styles.dart';
 
 class SignToWordScreen extends StatefulWidget {
   const SignToWordScreen({super.key});

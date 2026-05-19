@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:sign_language_interpreter/features/sign_to_word/sign_to_word_screen.dart';
 import 'package:sign_language_interpreter/features/video_call/controller/call_controller.dart';
 import 'package:sign_language_interpreter/features/video_call/service/call_service.dart';
 import 'package:sign_language_interpreter/features/video_call/view/call_screen.dart';
+import 'package:sign_language_interpreter/features/word_to_sign/view/word_to_sign_screen.dart';
 import '../../features/auth/controller/auth_controller.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/auth/view/register_screen.dart';
@@ -15,7 +15,6 @@ import '../../features/interpreter/controller/interpreter_controller.dart';
 import '../../features/interpreter/view/interpreter_screen.dart';
 import '../../features/alphabet/view/alphabet_screen.dart';
 import '../../core/di/service_locator.dart';
-
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -73,14 +72,14 @@ GoRouter buildRouter() {
       ),
       GoRoute(
         path: '/word-to-sign',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Word to Sign — Coming Soon')),
-        ),
+        builder: (context, state) => const WordToSignScreen(),
       ),
       GoRoute(
-  path: '/sign-to-word',
-  builder: (context, state) => const SignToWordScreen(),
-),
+        path: '/sign-to-word',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Sign to Word — Coming Soon')),
+        ),
+      ),
 
       // ── Video call routes ──────────────────────────────────────────────────
       GoRoute(

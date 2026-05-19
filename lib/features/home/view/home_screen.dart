@@ -157,7 +157,7 @@ class HomeScreen extends StatelessWidget {
                       _FeatureCard(
                         emoji: '🔍',
                         title: 'Sign to Word',
-                        subtitle: 'Upload a sign image',
+                        subtitle: 'Live interpretation of sign to word',
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -168,8 +168,8 @@ class HomeScreen extends StatelessWidget {
                       ),
                       _FeatureCard(
                         emoji: '🔤',
-                        title: 'Sign Alphabet',
-                        subtitle: 'Browse A–Z signs',
+                        title: 'Alphabet To Sign',
+                        subtitle: 'See The Sign Of Alphabets',
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,

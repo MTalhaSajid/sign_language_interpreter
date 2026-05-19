@@ -23,9 +23,8 @@ class _InterpreterScreenState extends State<InterpreterScreen>
 
   void _showHint(BuildContext context) {
     final controller = context.read<InterpreterController>();
-    final message = controller.isCnnMode
-        ? 'Please rotate camera to the left'
-        : 'Show your hand clearly in front of the camera';
+    final message = 'Please rotate camera to the left and show your '
+        '${controller.isRightHand ? 'right' : 'left'} hand clearly';
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(

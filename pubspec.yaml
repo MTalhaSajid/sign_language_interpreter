@@ -24,6 +24,7 @@ dependencies:
   # ── Firebase ──────────────────────────────────────────
   firebase_core: 3.15.2
   firebase_auth: 5.7.0
+  cloud_firestore: ^5.6.9
 
   # ── Networking & DI ───────────────────────────────────
   dio: ^5.8.0+1
@@ -38,6 +39,10 @@ dependencies:
   permission_handler: ^11.3.1
   flutter_tts: ^4.0.2
   http: ^1.2.0
+  image: ^4.1.7
+
+  # ── Video Call ────────────────────────────────────────
+  agora_rtc_engine: ^6.5.3
 
   # ── Image ─────────────────────────────────────────────
   image_picker: ^1.0.7
@@ -49,19 +54,54 @@ dev_dependencies:
   mockito: ^5.4.5
   build_runner: ^2.4.15
   flutter_native_splash: ^2.4.5
-  image: ^4.1.7
-  agora_rtc_engine: ^6.5.3
-  cloud_firestore: ^5.6.9
-  
+  flutter_launcher_icons: ^0.14.1
 
 flutter_native_splash:
   color: "#080E1C"
   color_dark: "#080E1C"
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#080E1C"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/model/
-    - assets/model/sign_cnn_model.tflite
-    - assets/model/word_cnn_model.tflite
+    - assets/images/datase_for_hand_to_alphabet/A/
+    - assets/images/datase_for_hand_to_alphabet/B/
+    - assets/images/datase_for_hand_to_alphabet/C/
+    - assets/images/datase_for_hand_to_alphabet/D/
+    - assets/images/datase_for_hand_to_alphabet/E/
+    - assets/images/datase_for_hand_to_alphabet/F/
+    - assets/images/datase_for_hand_to_alphabet/G/
+    - assets/images/datase_for_hand_to_alphabet/H/
+    - assets/images/datase_for_hand_to_alphabet/I/
+    - assets/images/datase_for_hand_to_alphabet/J/
+    - assets/images/datase_for_hand_to_alphabet/K/
+    - assets/images/datase_for_hand_to_alphabet/L/
+    - assets/images/datase_for_hand_to_alphabet/M/
+    - assets/images/datase_for_hand_to_alphabet/N/
+    - assets/images/datase_for_hand_to_alphabet/O/
+    - assets/images/datase_for_hand_to_alphabet/P/
+    - assets/images/datase_for_hand_to_alphabet/Q/
+    - assets/images/datase_for_hand_to_alphabet/R/
+    - assets/images/datase_for_hand_to_alphabet/S/
+    - assets/images/datase_for_hand_to_alphabet/T/
+    - assets/images/datase_for_hand_to_alphabet/U/
+    - assets/images/datase_for_hand_to_alphabet/V/
+    - assets/images/datase_for_hand_to_alphabet/W/
+    - assets/images/datase_for_hand_to_alphabet/X/
+    - assets/images/datase_for_hand_to_alphabet/Y/
+    - assets/images/datase_for_hand_to_alphabet/Z/
+    - assets/images/dataset_words/Hello/
+    - assets/images/dataset_words/Help/
+    - assets/images/dataset_words/ILoveYou/
+    - assets/images/dataset_words/Please/
+    - assets/images/dataset_words/Sorry/
+    - assets/images/dataset_words/Yes/
